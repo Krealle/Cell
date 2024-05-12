@@ -117,6 +117,18 @@ Cell.defaults.layout = {
         ["spacingX"] = 3,
         ["spacingY"] = 3,
     },
+    ["focus"] = {
+        ["enabled"] = false,
+        ["sameSizeAsMain"] = true,
+        ["sameArrangementAsMain"] = true,
+        ["size"] = {66, 46},
+        ["position"] = {},
+        ["powerSize"] = 2,
+        ["orientation"] = "vertical",
+        ["anchor"] = "TOPLEFT",
+        ["spacingX"] = 3,
+        ["spacingY"] = 3,
+    },
     -- ["npc"] = {true, false, {}, false, {66, 46}}, -- npcEnabled, separateNpc, position, sizeEnabled, size
     -- ["pet"] = {true, false, {}, false, {66, 46}}, -- partyPetsEnabled, raidPetsEnabled, raidPetsPosition, sizeEnabled, size
     -- ["spotlight"] = {false, {}, {}, false, {66, 46}}, -- enabled, units, position, sizeEnabled, size
