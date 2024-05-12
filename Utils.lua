@@ -835,6 +835,11 @@ function F:IterateAllUnitButtons(func, updateCurrentGroupOnly, updateQuickAssist
         func(b)
     end
 
+    -- player
+    for _, b in pairs(Cell.unitButtons.player) do
+        func(b)
+    end
+
     if Cell.isRetail and updateQuickAssist then
         for i = 1, 40 do
             func(Cell.unitButtons.quickAssist[i])

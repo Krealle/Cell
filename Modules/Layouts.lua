@@ -1270,6 +1270,209 @@ local function UpdateSpotlightPreview()
 end
 
 -------------------------------------------------
+-- player preview
+-------------------------------------------------
+local playerPreview, playerPreviewAnchor, playerPreviewName
+local function CreatePlayerPreview()
+    playerPreview = Cell:CreateFrame("CellPlayerPreviewFrame", Cell.frames.mainFrame, nil, nil, true)
+    playerPreview:EnableMouse(false)
+    playerPreview:SetFrameStrata("HIGH")
+    playerPreview:SetToplevel(true)
+    playerPreview:Hide()
+
+    playerPreviewAnchor = CreateFrame("Frame", "CellPlayerPreviewAnchorFrame", playerPreview, "BackdropTemplate")
+    P:Size(playerPreviewAnchor, 20, 10)
+    playerPreviewAnchor:SetMovable(true)
+    playerPreviewAnchor:EnableMouse(true)
+    playerPreviewAnchor:RegisterForDrag("LeftButton")
+    playerPreviewAnchor:SetClampedToScreen(true)
+    Cell:StylizeFrame(playerPreviewAnchor, { 0, 1, 0, 0.4 })
+
+    playerPreviewAnchor:Hide()
+    playerPreviewAnchor:SetScript("OnDragStart", function()
+        playerPreviewAnchor:StartMoving()
+        playerPreviewAnchor:SetUserPlaced(false)
+    end)
+
+    playerPreviewAnchor:SetScript("OnDragStop", function()
+        playerPreviewAnchor:StopMovingOrSizing()
+        P:SavePosition(playerPreviewAnchor, selectedLayoutTable["player"]["position"])
+    end)
+
+    playerPreviewName = playerPreviewAnchor:CreateFontString(nil, "OVERLAY", "CELL_FONT_CLASS_TITLE")
+
+    -- init player preview
+    playerPreview.fadeIn = playerPreview:CreateAnimationGroup()
+    local fadeIn = playerPreview.fadeIn:CreateAnimation("alpha")
+    fadeIn:SetFromAlpha(0)
+    fadeIn:SetToAlpha(1)
+    fadeIn:SetDuration(0.5)
+    fadeIn:SetSmoothing("OUT")
+    fadeIn:SetScript("OnPlay", function()
+        playerPreview:Show()
+    end)
+
+    playerPreview.fadeOut = playerPreview:CreateAnimationGroup()
+    local fadeOut = playerPreview.fadeOut:CreateAnimation("alpha")
+    fadeOut:SetFromAlpha(1)
+    fadeOut:SetToAlpha(0)
+    fadeOut:SetDuration(0.5)
+    fadeOut:SetSmoothing("IN")
+    fadeOut:SetScript("OnFinished", function()
+        playerPreview:Hide()
+    end)
+
+    playerPreview.header = CreateFrame("Frame", "CellPlayerPreviewFrameHeader", playerPreview)
+    
+    playerPreview.header.tex = playerPreview.header:CreateTexture(nil, "ARTWORK")
+    playerPreview.header.tex:SetTexture("Interface\\Buttons\\WHITE8x8")
+
+    playerPreview.header.tex:SetPoint("TOPLEFT", playerPreview.header, "TOPLEFT", P:Scale(1), P:Scale(-1))
+    playerPreview.header.tex:SetPoint("BOTTOMRIGHT", playerPreview.header, "BOTTOMRIGHT", P:Scale(-1), P:Scale(1))
+    
+    playerPreview.header.tex:SetVertexColor(F:ConvertRGB(255, 255, 255, desaturation[1])) -- White
+    playerPreview.header.tex:SetAlpha(0.555)
+end
+
+local function UpdatePlayerPreview()
+    if not playerPreview then
+        CreatePlayerPreview()
+    end
+
+    if not selectedLayoutTable["player"]["enabled"] then
+        if playerPreview.timer then
+            playerPreview.timer:Cancel()
+            playerPreview.timer = nil
+        end
+        if playerPreview.fadeIn:IsPlaying() then
+            playerPreview.fadeIn:Stop()
+        end
+        if not playerPreview.fadeOut:IsPlaying() then
+            playerPreview.fadeOut:Play()
+        end
+        return
+    end
+
+    -- size
+    local width, height
+    if selectedLayoutTable["player"]["sameSizeAsMain"] then
+        width, height = unpack(selectedLayoutTable["main"]["size"])
+    else
+        width, height = unpack(selectedLayoutTable["player"]["size"])
+    end
+    P:Size(playerPreview, width, height)
+
+    -- arrangement
+    local anchor, spacingX, spacingY
+    if selectedLayoutTable["player"]["sameArrangementAsMain"] then
+        anchor = selectedLayoutTable["main"]["anchor"]
+        spacingX = selectedLayoutTable["main"]["spacingX"]
+        spacingY = selectedLayoutTable["main"]["spacingY"]
+    else
+        anchor = selectedLayoutTable["player"]["anchor"]
+        spacingX = selectedLayoutTable["player"]["spacingX"]
+        spacingY = selectedLayoutTable["player"]["spacingY"]
+    end
+
+    -- update playerPreview point
+    playerPreview:ClearAllPoints()
+    playerPreviewName:ClearAllPoints()
+
+    if CellDB["general"]["menuPosition"] == "top_bottom" then
+        P:Size(playerPreviewAnchor, 20, 10)
+        if anchor == "BOTTOMLEFT" then
+            playerPreview:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "TOPLEFT", 0, 4)
+            playerPreviewName:SetPoint("LEFT", playerPreviewAnchor, "RIGHT", 5, 0)
+        elseif anchor == "BOTTOMRIGHT" then
+            playerPreview:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "TOPRIGHT", 0, 4)
+            playerPreviewName:SetPoint("RIGHT", playerPreviewAnchor, "LEFT", -5, 0)
+        elseif anchor == "TOPLEFT" then
+            playerPreview:SetPoint("TOPLEFT", playerPreviewAnchor, "BOTTOMLEFT", 0, -4)
+            playerPreviewName:SetPoint("LEFT", playerPreviewAnchor, "RIGHT", 5, 0)
+        elseif anchor == "TOPRIGHT" then
+            playerPreview:SetPoint("TOPRIGHT", playerPreviewAnchor, "BOTTOMRIGHT", 0, -4)
+            playerPreviewName:SetPoint("RIGHT", playerPreviewAnchor, "LEFT", -5, 0)
+        end
+    else
+        P:Size(playerPreviewAnchor, 10, 20)
+        if anchor == "BOTTOMLEFT" then
+            playerPreview:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "BOTTOMRIGHT", 4, 0)
+            playerPreviewName:SetPoint("TOPLEFT", playerPreviewAnchor, "BOTTOMLEFT", 0, -5)
+        elseif anchor == "BOTTOMRIGHT" then
+            playerPreview:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "BOTTOMLEFT", -4, 0)
+            playerPreviewName:SetPoint("TOPRIGHT", playerPreviewAnchor, "BOTTOMRIGHT", 0, -5)
+        elseif anchor == "TOPLEFT" then
+            playerPreview:SetPoint("TOPLEFT", playerPreviewAnchor, "TOPRIGHT", 4, 0)
+            playerPreviewName:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "TOPLEFT", 0, 5)
+        elseif anchor == "TOPRIGHT" then
+            playerPreview:SetPoint("TOPRIGHT", playerPreviewAnchor, "TOPLEFT", -4, 0)
+            playerPreviewName:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "TOPRIGHT", 0, 5)
+        end
+    end
+
+    -- update playerAnchor point
+    playerPreviewAnchor:ClearAllPoints()
+    if selectedLayout == Cell.vars.currentLayout then
+        playerPreviewAnchor:EnableMouse(false)
+        playerPreviewAnchor:SetAllPoints(Cell.frames.playerFrameAnchor)
+    else
+        playerPreviewAnchor:EnableMouse(true)
+        if not P:LoadPosition(playerPreviewAnchor, selectedLayoutTable["player"]["position"]) then
+            playerPreviewAnchor:SetPoint("TOPLEFT", UIParent, "CENTER")
+        end
+    end
+    playerPreviewAnchor:Show()
+    playerPreviewName:SetText(L["Layout"] .. ": " .. selectedLayout .. " (player)")
+    playerPreviewName:Show()
+
+    -- re-arrange
+    local header = playerPreview.header
+    header:ClearAllPoints()
+
+    -- anchor
+    local point, anchorPoint, unitSpacing
+    if anchor == "BOTTOMLEFT" then
+        point, anchorPoint = "BOTTOMLEFT", "TOPLEFT"
+        unitSpacing = spacingY
+    elseif anchor == "BOTTOMRIGHT" then
+        point, anchorPoint = "BOTTOMRIGHT", "TOPRIGHT"
+        unitSpacing = spacingY
+    elseif anchor == "TOPLEFT" then
+        point, anchorPoint = "TOPLEFT", "BOTTOMLEFT"
+        unitSpacing = -spacingY
+    elseif anchor == "TOPRIGHT" then
+        point, anchorPoint = "TOPRIGHT", "BOTTOMRIGHT"
+        unitSpacing = -spacingY
+    end
+
+    P:Size(header, width, height)
+    header:SetPoint(point)
+
+    P:Size(header, width, height)
+    header:ClearAllPoints()
+    header:SetPoint(point)
+
+    if not playerPreview:IsShown() then
+        playerPreview.fadeIn:Play()
+    end
+
+    if playerPreview.fadeOut:IsPlaying() then
+        playerPreview.fadeOut:Stop()
+    end
+
+    if playerPreview.timer then
+        playerPreview.timer:Cancel()
+    end
+
+    if previewMode == 0 then
+        playerPreview.timer = C_Timer.NewTimer(1, function()
+            playerPreview.fadeOut:Play()
+            playerPreview.timer = nil
+        end)
+    end
+end
+
+-------------------------------------------------
 -- hide previews
 -------------------------------------------------
 local function HidePreviews()
@@ -1315,6 +1518,17 @@ local function HidePreviews()
     end
     if not spotlightPreview.fadeOut:IsPlaying() then
         spotlightPreview.fadeOut:Play()
+    end
+    
+    if playerPreview.timer then
+        playerPreview.timer:Cancel()
+        playerPreview.timer = nil
+    end
+    if playerPreview.fadeIn:IsPlaying() then
+        playerPreview.fadeIn:Stop()
+    end
+    if not playerPreview.fadeOut:IsPlaying() then
+        playerPreview.fadeOut:Play()
     end
 end
 
@@ -1937,6 +2151,9 @@ local function CreateGroupFilterPane()
             if spotlightPreview:IsShown() then
                 spotlightPreview.fadeOut:Play()
             end
+            if playerPreview:IsShown() then
+                playerPreview.fadeOut:Play()
+            end
         elseif previewMode == 1 then
             previewModeButton:SetText(L["Preview"]..": "..L["Party"])
             UpdateLayoutPreview()
@@ -1945,12 +2162,14 @@ local function CreateGroupFilterPane()
                 raidPetPreview.fadeOut:Play()
             end
             UpdateSpotlightPreview()
+            UpdatePlayerPreview()
         else
             previewModeButton:SetText(L["Preview"]..": "..L["Raid"])
             UpdateLayoutPreview()
             UpdateNPCPreview()
             UpdateRaidPetPreview()
             UpdateSpotlightPreview()
+            UpdatePlayerPreview()
         end
     end)
     previewModeButton:SetScript("OnHide", function()
@@ -1975,7 +2194,7 @@ local orientationDropdown, anchorDropdown, spacingXSlider, spacingYSlider
 
 local sameSizeAsMainCB, sameArrangementAsMainCB
 local combineGroupsCB, sortByRoleCB, roleOrderWidget, hideSelfCB
-local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB
+local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB, playerFrameCB
 
 local function UpdateSize()
     if selectedLayout == Cell.vars.currentLayout then
@@ -1994,12 +2213,17 @@ local function UpdateSize()
         if selectedLayoutTable["spotlight"]["sameSizeAsMain"] then
             UpdateSpotlightPreview()
         end
+        if selectedLayoutTable["player"]["sameSizeAsMain"] then
+            UpdatePlayerPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
         UpdateNPCPreview()
     elseif selectedPage == "spotlight" then
         UpdateSpotlightPreview()
+    elseif selectedPage == "player" then
+        UpdatePlayerPreview()
     end
 end
 
@@ -2019,12 +2243,17 @@ local function UpdateArrangement()
         if selectedLayoutTable["spotlight"]["sameArrangementAsMain"] then
             UpdateSpotlightPreview()
         end
+        if selectedLayoutTable["player"]["sameArrangementAsMain"] then
+            UpdatePlayerPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
         UpdateNPCPreview()
     elseif selectedPage == "spotlight" then
         UpdateSpotlightPreview()
+    elseif selectedPage == "player" then
+        UpdatePlayerPreview()
     end
 end
 
@@ -2109,7 +2338,7 @@ end
 
 local function CreateLayoutSetupPane()
     local layoutSetupPane = Cell:CreateTitledPane(layoutsTab, L["Layout Setup"], 422, 290)
-    layoutSetupPane:SetPoint("TOPLEFT", 5, -110)
+    layoutSetupPane:SetPoint("TOPLEFT", 5, -120)
 
     -- buttons
     local spotlight = Cell:CreateButton(layoutSetupPane, L["Spotlight"], "accent-hover", {85, 17})
@@ -2127,6 +2356,10 @@ local function CreateLayoutSetupPane()
     local main = Cell:CreateButton(layoutSetupPane, L["Main"], "accent-hover", {70, 17})
     main:SetPoint("TOPRIGHT", pet, "TOPLEFT", P:Scale(1), 0)
     main.id = "main"
+
+    local player = Cell:CreateButton(layoutSetupPane, L["Player"], "accent-hover", {70, 17})
+    player:SetPoint("BOTTOMLEFT", main, "TOPLEFT")
+    player.id = "player"
 
     -- same size as main
     sameSizeAsMainCB = Cell:CreateCheckButton(layoutSetupPane, L["Use Same Size As Main"], function(checked, self)
@@ -2515,8 +2748,28 @@ local function CreateLayoutSetupPane()
         end
     end)
 
+     --* player -------------------------------------
+     pages.player = CreateFrame("Frame", nil, layoutsTab)
+     pages.player:SetAllPoints(layoutSetupPane)
+     pages.player:Hide()
+ 
+     playerFrameCB = Cell:CreateCheckButton(pages.player, L["Enable Player Frame"], function(checked)
+     selectedLayoutTable["player"]["enabled"] = checked
+        if checked then
+            UpdatePlayerPreview()
+        else
+            if playerPreview:IsShown() then
+                UpdatePlayerPreview()
+            end
+        end
+        if selectedLayout == Cell.vars.currentLayout then
+             Cell:Fire("UpdateLayout", selectedLayout, "player")
+         end
+     end)
+     playerFrameCB:SetPoint("TOPLEFT", 5, -27)
+
     -- button group
-    Cell:CreateButtonGroup({main, pet, npc, spotlight}, function(tab)
+    Cell:CreateButtonGroup({main, pet, npc, spotlight, player}, function(tab)
         selectedPage = tab
 
         -- load
@@ -2531,6 +2784,8 @@ local function CreateLayoutSetupPane()
             sameSizeAsMainCB:SetPoint("TOPLEFT", separateNpcCB, "BOTTOMLEFT", 0, -14)
         elseif tab == "spotlight" then
             sameSizeAsMainCB:SetPoint("TOPLEFT", hidePlaceholderCB, "BOTTOMLEFT", 0, -14)
+        elseif tab == "player" then
+            sameSizeAsMainCB:SetPoint("TOPLEFT", playerFrameCB, "BOTTOMLEFT", 0, -14)
         end
 
         widthSlider:ClearAllPoints()
@@ -2747,6 +3002,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
     separateNpcCB:SetEnabled(selectedLayoutTable["npc"]["enabled"])
     spotlightCB:SetChecked(selectedLayoutTable["spotlight"]["enabled"])
     hidePlaceholderCB:SetChecked(selectedLayoutTable["spotlight"]["hidePlaceholder"])
+    playerFrameCB:SetChecked(selectedLayoutTable["player"]["enabled"])
 
     UpdateGroupFilter()
     UpdatePreviewButton()
@@ -2755,6 +3011,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
         UpdateNPCPreview()
         UpdateRaidPetPreview()
         UpdateSpotlightPreview()
+        UpdatePlayerPreview()
     end
 end
 

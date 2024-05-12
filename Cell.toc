@@ -48,5 +48,6 @@ RaidFrames\Groups\RaidFrame.lua
 RaidFrames\Groups\RaidPetFrame.lua
 RaidFrames\Groups\NPCFrame.lua
 RaidFrames\Groups\SpotlightFrame.lua
+RaidFrames\Units\PlayerFrame.lua
 
 Supporters.lua
