@@ -2679,6 +2679,40 @@ function F:Revise()
         end
     end
 
+    -- r224-release
+    if CellDB["revise"] and dbRevision < 224 then
+        for _, layout in pairs(CellDB["layouts"]) do
+            -- update health text color option
+            local index = Cell.defaults.indicatorIndices.healthText
+            if #layout["indicators"][index]["color"] == 3 then
+                layout["indicators"][index]["color"] = {"custom_color", layout["indicators"][index]["color"]}
+            end
+
+            -- add frameLevel to Color and Overlay
+            for _, i in pairs(layout["indicators"]) do
+                if i.type == "color" or i.type == "overlay" then
+                    if not i.frameLevel then
+                        i.frameLevel = 1
+                    end
+                end
+            end
+        end
+
+        -- move "use LibHealComm" to snippetVars
+        if not strfind(CellDB["snippets"][0]["code"], "CELL_USE_LIBHEALCOMM") then
+            CellDB["snippets"][0]["code"] = CellDB["snippets"][0]["code"].."\n\n-- use LibHealComm (boolean, non-retail)\nCELL_USE_LIBHEALCOMM = false"
+        end
+
+        -- update overshield
+        if type(CellDB["appearance"]["overshield"]) ~= "table" then
+            local enabled = CellDB["appearance"]["overshield"] and true or false
+            CellDB["appearance"]["overshield"] = {enabled, {CellDB["appearance"]["shield"][2][1], CellDB["appearance"]["shield"][2][2], CellDB["appearance"]["shield"][2][3], 1}}
+        end
+
+        -- disable snippets
+        F:DisableSnippets()
+    end
+
     -- ----------------------------------------------------------------------- --
     --            update from old versions, validate all indicators            --
     -- ----------------------------------------------------------------------- --

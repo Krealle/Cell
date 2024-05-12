@@ -399,13 +399,13 @@ local function CreateSetting_Size(parent)
         widget = addon:CreateFrame("CellIndicatorSettings_Size", parent, 240, 50)
         settingWidgets["size"] = widget
 
-        widget.width = addon:CreateSlider(L["Width"], widget, 1, 100, 110, 1)
+        widget.width = addon:CreateSlider(L["Width"], widget, 1, 200, 110, 1)
         widget.width:SetPoint("TOPLEFT", widget, 5, -20)
         widget.width.afterValueChangedFn = function(value)
             widget.func({value, widget.height:GetValue()})
         end
         
-        widget.height = addon:CreateSlider(L["Height"], widget, 1, 100, 110, 1)
+        widget.height = addon:CreateSlider(L["Height"], widget, 1, 200, 110, 1)
         widget.height:SetPoint("LEFT", widget.width, "RIGHT", 25, 0)
         widget.height.afterValueChangedFn = function(value)
             widget.func({widget.width:GetValue(), value})
@@ -433,7 +433,7 @@ local function CreateSetting_SizeBar(parent)
     local widget
 
     if not settingWidgets["size-bar"] then
-        widget = addon:CreateFrame("CellIndicatorSettings_Size", parent, 240, 50)
+        widget = addon:CreateFrame("CellIndicatorSettings_SizeBar", parent, 240, 50)
         settingWidgets["size-bar"] = widget
 
         widget.width = addon:CreateSlider(L["Width"], widget, 3, 500, 110, 1)
@@ -473,7 +473,7 @@ local function CreateSetting_SizeSquare(parent)
         widget = addon:CreateFrame("CellIndicatorSettings_SizeSquare", parent, 240, 50)
         settingWidgets["size-square"] = widget
 
-        widget.size = addon:CreateSlider(L["Size"], widget, 1, 100, 110, 1)
+        widget.size = addon:CreateSlider(L["Size"], widget, 1, 200, 110, 1)
         widget.size:SetPoint("TOPLEFT", widget, 5, -20)
         widget.size.afterValueChangedFn = function(value)
             widget.func({value, value})
@@ -533,13 +533,13 @@ local function CreateSetting_SizeNormalBig(parent)
         widget = addon:CreateFrame("CellIndicatorSettings_SizeNormalBig", parent, 240, 50)
         settingWidgets["size-normal-big"] = widget
 
-        widget.sizeNormal = addon:CreateSlider(L["Size"], widget, 1, 100, 110, 1)
+        widget.sizeNormal = addon:CreateSlider(L["Size"], widget, 1, 200, 110, 1)
         widget.sizeNormal:SetPoint("TOPLEFT", widget, 5, -20)
         widget.sizeNormal.afterValueChangedFn = function(value)
             widget.func({{value, value}, {widget.sizeBig:GetValue(), widget.sizeBig:GetValue()}})
         end
 
-        widget.sizeBig = addon:CreateSlider(L["Size (Big)"], widget, 1, 100, 110, 1)
+        widget.sizeBig = addon:CreateSlider(L["Size (Big)"], widget, 1, 200, 110, 1)
         widget.sizeBig:SetPoint("LEFT", widget.sizeNormal, "RIGHT", 25, 0)
         widget.sizeBig.afterValueChangedFn = function(value)
             widget.func({{widget.sizeNormal:GetValue(), widget.sizeNormal:GetValue()}, {value, value}})
@@ -570,7 +570,7 @@ local function CreateSetting_SizeAndBorder(parent)
         widget = addon:CreateFrame("CellIndicatorSettings_SizeAndBorder", parent, 240, 50)
         settingWidgets["size-border"] = widget
 
-        widget.size = addon:CreateSlider(L["Size"], widget, 1, 100, 110, 1)
+        widget.size = addon:CreateSlider(L["Size"], widget, 1, 200, 110, 1)
         widget.size:SetPoint("TOPLEFT", widget, 5, -20)
         widget.size.afterValueChangedFn = function(value)
             widget.func({value, value, widget.border:GetValue()})
@@ -1082,6 +1082,13 @@ local function CreateSetting_DurationVisibility(parent)
                 ["value"] = 0.5,
                 ["onClick"] = function()
                     widget.func(0.5)
+                end,
+            },
+            {
+                ["text"] = "< 30%",
+                ["value"] = 0.3,
+                ["onClick"] = function()
+                    widget.func(0.3)
                 end,
             },
             {
@@ -1853,6 +1860,13 @@ local function CreateSetting_Colors(parent)
                 end,
             },
             {
+                ["text"] = "30%",
+                ["value"] = 0.3,
+                ["onClick"] = function()
+                    widget.colorsTable[2][5] = 0.3
+                end,
+            },
+            {
                 ["text"] = "25%",
                 ["value"] = 0.25,
                 ["onClick"] = function()
@@ -1997,6 +2011,13 @@ local function CreateSetting_OverlayColors(parent)
                 end,
             },
             {
+                ["text"] = "30%",
+                ["value"] = 0.3,
+                ["onClick"] = function()
+                    widget.colorsTable[2][6] = 0.3
+                end,
+            },
+            {
                 ["text"] = "25%",
                 ["value"] = 0.25,
                 ["onClick"] = function()
@@ -2127,6 +2148,18 @@ local function CreateSetting_CustomColors(parent)
                     widget.func(widget.colorTable)
                 end
             },
+            {
+                ["text"] = L["Class Color"],
+                ["value"] = "class-color",
+                ["onClick"] = function()
+                    P:Height(widget, 50)
+                    widget.colorPicker1:Hide()
+                    widget.colorPicker2:Hide()
+                    widget.cotFrame:Hide()
+                    widget.colorTable[1] = "class-color"
+                    widget.func(widget.colorTable)
+                end
+            },
         }
         
         widget.debuffItems = {
@@ -2187,6 +2220,18 @@ local function CreateSetting_CustomColors(parent)
                     widget.colorPicker2:Hide()
                     widget.cotFrame:Show()
                     widget.colorTable[1] = "change-over-time"
+                    widget.func(widget.colorTable)
+                end
+            },
+            {
+                ["text"] = L["Class Color"],
+                ["value"] = "class-color",
+                ["onClick"] = function()
+                    P:Height(widget, 50)
+                    widget.colorPicker1:Hide()
+                    widget.colorPicker2:Hide()
+                    widget.cotFrame:Hide()
+                    widget.colorTable[1] = "class-color"
                     widget.func(widget.colorTable)
                 end
             },
@@ -2255,6 +2300,12 @@ local function CreateSetting_CustomColors(parent)
                 ["text"] = "50%",
                 ["onClick"] = function()
                     widget.colorTable[5][4] = 0.5
+                end,
+            },
+            {
+                ["text"] = "30%",
+                ["onClick"] = function()
+                    widget.colorTable[5][4] = 0.3
                 end,
             },
             {
@@ -2335,6 +2386,11 @@ local function CreateSetting_CustomColors(parent)
                 widget.colorPicker1:Hide()
                 widget.colorPicker2:Hide()
                 widget.cotFrame:Show()
+            elseif colorTable[1] == "class-color" then
+                P:Height(widget, 50)
+                widget.colorPicker1:Hide()
+                widget.colorPicker2:Hide()
+                widget.cotFrame:Hide()
             else -- gradient
                 P:Height(widget, 50)
                 widget.colorPicker1:Show()
@@ -5282,6 +5338,74 @@ local function CreateSetting_CastBy(parent)
     return widget
 end
 
+local function CreateSetting_ShowOn(parent)
+    local widget
+
+    if not settingWidgets["showOn"] then
+        widget = addon:CreateFrame("CellIndicatorSettings_ShowOn", parent, 240, 50)
+        settingWidgets["showOn"] = widget
+
+        widget.showOn = addon:CreateDropdown(widget, 245)
+        widget.showOn:SetPoint("TOPLEFT", 5, -20)
+        widget.showOn:SetItems({
+            {
+                ["text"] = L["All"],
+                ["value"] = "all",
+                ["onClick"] = function()
+                    widget.func("all")
+                end,
+            },
+            {
+                ["text"] = L["Main"],
+                ["value"] = "main",
+                ["onClick"] = function()
+                    widget.func("main")
+                end,
+            },
+            {
+                ["text"] = L["Spotlight"],
+                ["value"] = "spotlight",
+                ["onClick"] = function()
+                    widget.func("spotlight")
+                end,
+            },
+            {
+                ["text"] = L["Pet"],
+                ["value"] = "pet",
+                ["onClick"] = function()
+                    widget.func("pet")
+                end,
+            },
+            {
+                ["text"] = L["NPC"],
+                ["value"] = "npc",
+                ["onClick"] = function()
+                    widget.func("npc")
+                end,
+            },
+        })
+
+        widget.showOnText = widget:CreateFontString(nil, "OVERLAY", font_name)
+        widget.showOnText:SetText(L["Show On"])
+        widget.showOnText:SetPoint("BOTTOMLEFT", widget.showOn, "TOPLEFT", 0, 1)
+
+        -- callback
+        function widget:SetFunc(func)
+            widget.func = func
+        end
+        
+        -- show db value
+        function widget:SetDBValue(showOn)
+            widget.showOn:SetSelectedValue(showOn)
+        end
+    else
+        widget = settingWidgets["showOn"]
+    end
+
+    widget:Show()
+    return widget
+end
+
 -----------------------------------------
 -- update parent height
 -----------------------------------------
@@ -5423,6 +5547,8 @@ function addon:CreateIndicatorSettings(parent, settingsTable)
             tinsert(widgetsTable, CreateSetting_TargetCounterFilters(parent))
         elseif setting == "castBy" then
             tinsert(widgetsTable, CreateSetting_CastBy(parent))
+        elseif setting == "showOn" then
+            tinsert(widgetsTable, CreateSetting_ShowOn(parent))
         else -- tips
             tinsert(widgetsTable, CreateSetting_Tips(parent, setting))
         end

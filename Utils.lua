@@ -341,6 +341,10 @@ function F:ConvertHSBToRGB(h, s, b)
     return R, G, B
 end
 
+function F:InvertColor(r, g, b)
+    return 1 - r, 1 - g, 1 - b
+end
+
 -------------------------------------------------
 -- number
 -------------------------------------------------
@@ -880,7 +884,7 @@ function F:GetUnitButtonByUnit(unit, getSpotlights, getQuickAssist)
     if getSpotlights then
         wipe(spotlights)
         for _, b in pairs(Cell.unitButtons.spotlight) do
-            if b.state.unit and UnitIsUnit(b.state.unit, unit) then
+            if b.states.unit and UnitIsUnit(b.states.unit, unit) then
                 tinsert(spotlights, b)
             end
         end
@@ -932,7 +936,7 @@ function F:HandleUnitButton(type, unit, func, ...)
     end
     
     for _, b in pairs(Cell.unitButtons.spotlight) do
-        if b.state.unit and UnitIsUnit(b.state.unit, unit) then
+        if b.states.unit and UnitIsUnit(b.states.unit, unit) then
             func(b, ...)
             handled = true
         end
@@ -1269,9 +1273,9 @@ end
 
 function F:UnitInGroup(unit, ignorePets)
     if ignorePets then
-        return UnitIsUnit(unit, "player") or UnitInParty(unit) or UnitInRaid(unit)
+        return UnitIsUnit(unit, "player") or UnitInParty(unit) or UnitInRaid(unit) or UnitInPartyIsAI(unit)
     else
-        return UnitIsUnit(unit, "player") or UnitIsUnit(unit, "pet") or UnitPlayerOrPetInParty(unit) or UnitPlayerOrPetInRaid(unit)
+        return UnitIsUnit(unit, "player") or UnitIsUnit(unit, "pet") or UnitPlayerOrPetInParty(unit) or UnitPlayerOrPetInRaid(unit) or UnitInPartyIsAI(unit)
     end
 end
 
@@ -1285,7 +1289,7 @@ function F:GetTargetUnitID(target)
 
     if not F:UnitInGroup(target) then return end
 
-    if UnitIsPlayer(target) then
+    if UnitIsPlayer(target) or UnitInPartyIsAI(target) then
         for unit in F:IterateGroupMembers() do
             if UnitIsUnit(target, unit) then
                 return unit
@@ -1307,7 +1311,7 @@ function F:GetTargetPetID(target)
 
     if not F:UnitInGroup(target) then return end
 
-    if UnitIsPlayer(target) then
+    if UnitIsPlayer(target) or UnitInPartyIsAI(target) then
         for unit in F:IterateGroupMembers() do
             if UnitIsUnit(target, unit) then
                 return F:GetPetUnit(unit)
