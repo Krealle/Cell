@@ -422,8 +422,14 @@ function eventFrame:ADDON_LOADED(arg1)
             CellDB["layouts"] = {
                 ["default"] = F:Copy(Cell.defaults.layout)
             }
+        else
+          -- Make sure that we aren't missing any layouts
+          for name, layout in pairs(Cell.defaults.layout) do
+              if type(CellDB["layouts"]["default"][name]) ~= "table" then
+                  CellDB["layouts"]["default"][name] = F:Copy(Cell.defaults.layout[name])
+              end
+          end
         end
-
         -- layoutAutoSwitch -----------------------------------------------------------------------
         if type(CellDB["layoutAutoSwitch"]) ~= "table" then
             CellDB["layoutAutoSwitch"] = {
