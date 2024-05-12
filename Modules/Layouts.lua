@@ -2933,6 +2933,7 @@ local function CreateLayoutSetupPane()
         if selectedLayout == Cell.vars.currentLayout then
             Cell:Fire("UpdateLayout", selectedLayout, "target")
         end
+        Cell:Fire("UpdateVisibility", "target")
     end)
     targetFrameCB:SetPoint("TOPLEFT", 5, -27)
 
@@ -2953,6 +2954,7 @@ local function CreateLayoutSetupPane()
         if selectedLayout == Cell.vars.currentLayout then
             Cell:Fire("UpdateLayout", selectedLayout, "focus")
         end
+        Cell:Fire("UpdateVisibility", "focus")
     end)
     focusFrameCB:SetPoint("TOPLEFT", 5, -27)
 
