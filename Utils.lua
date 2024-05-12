@@ -1003,6 +1003,27 @@ end
 -- end
 
 -------------------------------------------------
+-- global functions
+-------------------------------------------------
+local UnitGUID = UnitGUID
+local GetNumGroupMembers = GetNumGroupMembers
+local GetRaidRosterInfo = GetRaidRosterInfo
+local IsInRaid = IsInRaid
+local IsInGroup = IsInGroup
+local UnitIsPlayer = UnitIsPlayer
+local UnitIsUnit = UnitIsUnit
+local UnitInParty = UnitInParty
+local UnitInRaid = UnitInRaid
+local UnitPlayerOrPetInParty = UnitPlayerOrPetInParty
+local UnitPlayerOrPetInRaid = UnitPlayerOrPetInRaid
+local UnitClass = UnitClass
+local UnitClassBase = UnitClassBase
+local UnitName = UnitName
+local UnitIsGroupLeader = UnitIsGroupLeader
+local UnitIsGroupAssistant = UnitIsGroupAssistant
+local UnitInPartyIsAI = UnitInPartyIsAI or function() end
+
+-------------------------------------------------
 -- frame colors
 -------------------------------------------------
 local RAID_CLASS_COLORS = CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS
@@ -1026,7 +1047,21 @@ function F:GetClassColorStr(class)
     end
 end
 
-local function GetPowerColor(unit)
+function F:GetUnitClassColor(unit, class, guid)
+    class = class or select(2, UnitClass(unit))
+    guid = guid or UnitGUID(unit)
+
+    if UnitIsPlayer(unit) or UnitInPartyIsAI(unit) then -- player
+        return F:GetClassColor(class)
+    elseif F:IsPet(guid) then -- pet
+        return 0.5, 0.5, 1
+    else -- npc / vehicle
+        return 0, 1, 0.2
+    end
+end
+
+
+function F:GetPowerColor(unit)
     local r, g, b, t
     -- https://wow.gamepedia.com/API_UnitPowerType
     local powerType, powerToken, altR, altG, altB = UnitPowerType(unit)
@@ -1054,9 +1089,9 @@ local function GetPowerColor(unit)
     return r, g, b, t
 end
 
-function F:GetPowerColor(unit, class)
+function F:GetPowerBarColor(unit, class)
     local r, g, b, lossR, lossG, lossB, t
-    r, g, b, t = GetPowerColor(unit)
+    r, g, b, t = F:GetPowerColor(unit)
 
     if not Cell.loaded then
         return r, g, b, r*0.2, g*0.2, b*0.2, t
@@ -1077,7 +1112,7 @@ function F:GetPowerColor(unit, class)
     return r, g, b, lossR, lossG, lossB, t
 end
 
-function F:GetHealthColor(percent, isDeadOrGhost, r, g, b)
+function F:GetHealthBarColor(percent, isDeadOrGhost, r, g, b)
     if not Cell.loaded then
         return r, g, b, r*0.2, g*0.2, b*0.2      
     end
@@ -1140,20 +1175,6 @@ end
 -------------------------------------------------
 -- units
 -------------------------------------------------
-local GetNumGroupMembers = GetNumGroupMembers
-local GetRaidRosterInfo = GetRaidRosterInfo
-local IsInRaid = IsInRaid
-local IsInGroup = IsInGroup
-local UnitIsUnit = UnitIsUnit
-local UnitInParty = UnitInParty
-local UnitInRaid = UnitInRaid
-local UnitPlayerOrPetInParty = UnitPlayerOrPetInParty
-local UnitPlayerOrPetInRaid = UnitPlayerOrPetInRaid
-local UnitClassBase = UnitClassBase
-local UnitName = UnitName
-local UnitIsGroupLeader = UnitIsGroupLeader
-local UnitIsGroupAssistant = UnitIsGroupAssistant
-
 function F:GetNumSubgroupMembers(group)
     local n = 0
     for i = 1, GetNumGroupMembers() do
@@ -1332,6 +1353,30 @@ local OBJECT_AFFILIATION_RAID = 0x00000004
 function F:IsFriend(unitFlags)
     if not unitFlags then return false end
     return (bit.band(unitFlags, OBJECT_AFFILIATION_MINE) ~= 0) or (bit.band(unitFlags, OBJECT_AFFILIATION_RAID) ~= 0) or (bit.band(unitFlags, OBJECT_AFFILIATION_PARTY) ~= 0)
+end
+
+function F:IsPlayer(guid)
+    if guid then
+        return string.find(guid, "^Player")
+    end
+end
+
+function F:IsPet(guid)
+    if guid then
+        return string.find(guid, "^Pet")
+    end
+end
+
+function F:IsNPC(guid)
+    if guid then
+        return string.find(guid, "^Creature")
+    end
+end
+
+function F:IsVehicle(guid)
+    if guid then
+        return string.find(guid, "^Vehicle")
+    end
 end
 
 function F:GetTargetUnitInfo()
