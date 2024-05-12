@@ -1556,10 +1556,21 @@ end
 -------------------------------------------------
 local function UpdatePlayerPreview()
     if not unitPreviews["player"] then
-      CreatePreviewFrame("player", "Player", Cell.frames.playerFrameAnchor)
+      CreatePreviewFrame("player", "Player Frame", Cell.frames.playerFrameAnchor)
     end
 
     UpdatePreviewFrame("player")
+end
+
+-------------------------------------------------
+-- target preview
+-------------------------------------------------
+local function UpdateTargetPreview()
+    if not unitPreviews["target"] then
+      CreatePreviewFrame("target", "Target Frame", Cell.frames.targetFrameAnchor)
+    end
+
+    UpdatePreviewFrame("target")
 end
 
 -------------------------------------------------
@@ -1610,15 +1621,17 @@ local function HidePreviews()
         spotlightPreview.fadeOut:Play()
     end
     
-    if unitPreviews["player"].preview.timer then
-        unitPreviews["player"].preview.timer:Cancel()
-        unitPreviews["player"].preview.timer = nil
-    end
-    if unitPreviews["player"].preview.fadeIn:IsPlaying() then
-        unitPreviews["player"].preview.fadeIn:Stop()
-    end
-    if not unitPreviews["player"].preview.fadeOut:IsPlaying() then
-        unitPreviews["player"].preview.fadeOut:Play()
+    for k, unit in pairs(unitPreviews) do
+        if unit.preview.timer then
+            unit.preview.timer:Cancel()
+            unit.preview.timer = nil
+        end
+        if unit.preview.fadeIn:IsPlaying() then
+            unit.preview.fadeIn:Stop()
+        end
+        if not unit.preview.fadeOut:IsPlaying() then
+            unit.preview.fadeOut:Play()
+        end
     end
 end
 
@@ -2241,8 +2254,10 @@ local function CreateGroupFilterPane()
             if spotlightPreview:IsShown() then
                 spotlightPreview.fadeOut:Play()
             end
-            if unitPreviews["player"].preview:IsShown() then
-                unitPreviews["player"].preview.fadeOut:Play()
+            for _, unit in pairs(unitPreviews) do
+                if unit.preview:IsShown() then
+                    unit.preview.fadeOut:Play()
+                end
             end
         elseif previewMode == 1 then
             previewModeButton:SetText(L["Preview"]..": "..L["Party"])
@@ -2253,6 +2268,7 @@ local function CreateGroupFilterPane()
             end
             UpdateSpotlightPreview()
             UpdatePlayerPreview()
+            UpdateTargetPreview()
         else
             previewModeButton:SetText(L["Preview"]..": "..L["Raid"])
             UpdateLayoutPreview()
@@ -2260,6 +2276,7 @@ local function CreateGroupFilterPane()
             UpdateRaidPetPreview()
             UpdateSpotlightPreview()
             UpdatePlayerPreview()
+            UpdateTargetPreview()
         end
     end)
     previewModeButton:SetScript("OnHide", function()
@@ -2284,7 +2301,7 @@ local orientationDropdown, anchorDropdown, spacingXSlider, spacingYSlider
 
 local sameSizeAsMainCB, sameArrangementAsMainCB
 local combineGroupsCB, sortByRoleCB, roleOrderWidget, hideSelfCB
-local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB, playerFrameCB
+local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB, playerFrameCB, targetFrameCB
 
 local function UpdateSize()
     if selectedLayout == Cell.vars.currentLayout then
@@ -2306,6 +2323,9 @@ local function UpdateSize()
         if selectedLayoutTable["player"]["sameSizeAsMain"] then
             UpdatePlayerPreview()
         end
+        if selectedLayoutTable["target"]["sameSizeAsMain"] then
+            UpdateTargetPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
@@ -2314,6 +2334,8 @@ local function UpdateSize()
         UpdateSpotlightPreview()
     elseif selectedPage == "player" then
         UpdatePlayerPreview()
+    elseif selectedPage == "target" then
+        UpdateTargetPreview()
     end
 end
 
@@ -2336,6 +2358,9 @@ local function UpdateArrangement()
         if selectedLayoutTable["player"]["sameArrangementAsMain"] then
             UpdatePlayerPreview()
         end
+        if selectedLayoutTable["target"]["sameArrangementAsMain"] then
+            UpdateTargetPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
@@ -2344,6 +2369,8 @@ local function UpdateArrangement()
         UpdateSpotlightPreview()
     elseif selectedPage == "player" then
         UpdatePlayerPreview()
+    elseif selectedPage == "target" then
+        UpdateTargetPreview()
     end
 end
 
@@ -2448,8 +2475,12 @@ local function CreateLayoutSetupPane()
     main.id = "main"
 
     local player = Cell:CreateButton(layoutSetupPane, L["Player"], "accent-hover", {70, 17})
-    player:SetPoint("BOTTOMLEFT", main, "TOPLEFT")
+    player:SetPoint("BOTTOMLEFT", main, "TOPLEFT", 0, P:Scale(-1))
     player.id = "player"
+
+    local target = Cell:CreateButton(layoutSetupPane, L["Target"], "accent-hover", {70, 17})
+    target:SetPoint("TOPLEFT", player, "TOPRIGHT", P:Scale(-1), 0)
+    target.id = "target"
 
     -- same size as main
     sameSizeAsMainCB = Cell:CreateCheckButton(layoutSetupPane, L["Use Same Size As Main"], function(checked, self)
@@ -2858,8 +2889,28 @@ local function CreateLayoutSetupPane()
      end)
      playerFrameCB:SetPoint("TOPLEFT", 5, -27)
 
+     --* target -------------------------------------
+     pages.target = CreateFrame("Frame", nil, layoutsTab)
+     pages.target:SetAllPoints(layoutSetupPane)
+     pages.target:Hide()
+ 
+     targetFrameCB = Cell:CreateCheckButton(pages.target, L["Enable Target Frame"], function(checked)
+     selectedLayoutTable["target"]["enabled"] = checked
+        if checked then
+            UpdateTargetPreview()
+        else
+            if unitPreviews["target"].preview:IsShown() then
+                UpdateTargetPreview()
+            end
+        end
+        if selectedLayout == Cell.vars.currentLayout then
+             Cell:Fire("UpdateLayout", selectedLayout, "target")
+         end
+     end)
+     targetFrameCB:SetPoint("TOPLEFT", 5, -27)
+
     -- button group
-    Cell:CreateButtonGroup({main, pet, npc, spotlight, player}, function(tab)
+    Cell:CreateButtonGroup({main, pet, npc, spotlight, player, target}, function(tab)
         selectedPage = tab
 
         -- load
@@ -2876,6 +2927,8 @@ local function CreateLayoutSetupPane()
             sameSizeAsMainCB:SetPoint("TOPLEFT", hidePlaceholderCB, "BOTTOMLEFT", 0, -14)
         elseif tab == "player" then
             sameSizeAsMainCB:SetPoint("TOPLEFT", playerFrameCB, "BOTTOMLEFT", 0, -14)
+        elseif tab == "target" then
+            sameSizeAsMainCB:SetPoint("TOPLEFT", targetFrameCB, "BOTTOMLEFT", 0, -14)
         end
 
         widthSlider:ClearAllPoints()
@@ -3093,6 +3146,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
     spotlightCB:SetChecked(selectedLayoutTable["spotlight"]["enabled"])
     hidePlaceholderCB:SetChecked(selectedLayoutTable["spotlight"]["hidePlaceholder"])
     playerFrameCB:SetChecked(selectedLayoutTable["player"]["enabled"])
+    targetFrameCB:SetChecked(selectedLayoutTable["target"]["enabled"])
 
     UpdateGroupFilter()
     UpdatePreviewButton()
@@ -3102,6 +3156,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
         UpdateRaidPetPreview()
         UpdateSpotlightPreview()
         UpdatePlayerPreview()
+        UpdateTargetPreview()
     end
 end
 
