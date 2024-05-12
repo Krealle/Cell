@@ -1270,206 +1270,296 @@ local function UpdateSpotlightPreview()
 end
 
 -------------------------------------------------
--- player preview
+-- Units preview
 -------------------------------------------------
-local playerPreview, playerPreviewAnchor, playerPreviewName
-local function CreatePlayerPreview()
-    playerPreview = Cell:CreateFrame("CellPlayerPreviewFrame", Cell.frames.mainFrame, nil, nil, true)
-    playerPreview:EnableMouse(false)
-    playerPreview:SetFrameStrata("HIGH")
-    playerPreview:SetToplevel(true)
-    playerPreview:Hide()
 
-    playerPreviewAnchor = CreateFrame("Frame", "CellPlayerPreviewAnchorFrame", playerPreview, "BackdropTemplate")
-    P:Size(playerPreviewAnchor, 20, 10)
-    playerPreviewAnchor:SetMovable(true)
-    playerPreviewAnchor:EnableMouse(true)
-    playerPreviewAnchor:RegisterForDrag("LeftButton")
-    playerPreviewAnchor:SetClampedToScreen(true)
-    Cell:StylizeFrame(playerPreviewAnchor, { 0, 1, 0, 0.4 })
+--- @class CellPreviewFrame
+--- @field preview Frame
+--- @field previewAnchor Frame
+--- @field previewName Frame
+--- @field parentAnchor Frame
 
-    playerPreviewAnchor:Hide()
-    playerPreviewAnchor:SetScript("OnDragStart", function()
-        playerPreviewAnchor:StartMoving()
-        playerPreviewAnchor:SetUserPlaced(false)
+---@type table<string, CellPreviewFrame>
+local unitPreviews = {}
+
+--- @param which string
+--- @param frameName string
+--- @param parentAnchor Frame
+--- @param headerAmount number|nil
+local function CreatePreviewFrame(which, frameName, parentAnchor, headerAmount)
+    local name = which:gsub("^%l", string.upper)
+
+    local previewFrame = Cell:CreateFrame("Cell"..name.."PreviewFrame", Cell.frames.mainFrame, nil, nil, true)
+    previewFrame:EnableMouse(false)
+    previewFrame:SetFrameStrata("HIGH")
+    previewFrame:SetToplevel(true)
+    previewFrame:Hide()
+
+    local previewFrameAnchor = CreateFrame("Frame", "Cell"..name.."PreviewAnchorFrame", previewFrame, "BackdropTemplate")
+    P:Size(previewFrameAnchor, 20, 10)
+    previewFrameAnchor:SetMovable(true)
+    previewFrameAnchor:EnableMouse(true)
+    previewFrameAnchor:RegisterForDrag("LeftButton")
+    previewFrameAnchor:SetClampedToScreen(true)
+    Cell:StylizeFrame(previewFrameAnchor, { 0, 1, 0, 0.4 })
+
+    previewFrameAnchor:Hide()
+    previewFrameAnchor:SetScript("OnDragStart", function()
+        previewFrameAnchor:StartMoving()
+        previewFrameAnchor:SetUserPlaced(false)
     end)
 
-    playerPreviewAnchor:SetScript("OnDragStop", function()
-        playerPreviewAnchor:StopMovingOrSizing()
-        P:SavePosition(playerPreviewAnchor, selectedLayoutTable["player"]["position"])
+    previewFrameAnchor:SetScript("OnDragStop", function()
+        previewFrameAnchor:StopMovingOrSizing()
+        P:SavePosition(previewFrameAnchor, selectedLayoutTable[which]["position"])
     end)
 
-    playerPreviewName = playerPreviewAnchor:CreateFontString(nil, "OVERLAY", "CELL_FONT_CLASS_TITLE")
+    local previewFrameName = previewFrameAnchor:CreateFontString(nil, "OVERLAY", "CELL_FONT_CLASS_TITLE")
+    previewFrameName:SetText(L["Layout"] .. ": " .. selectedLayout .. " ("..L[frameName]..")")
 
-    -- init player preview
-    playerPreview.fadeIn = playerPreview:CreateAnimationGroup()
-    local fadeIn = playerPreview.fadeIn:CreateAnimation("alpha")
+    -- init preview
+    previewFrame.fadeIn = previewFrame:CreateAnimationGroup()
+    local fadeIn = previewFrame.fadeIn:CreateAnimation("alpha")
     fadeIn:SetFromAlpha(0)
     fadeIn:SetToAlpha(1)
     fadeIn:SetDuration(0.5)
     fadeIn:SetSmoothing("OUT")
     fadeIn:SetScript("OnPlay", function()
-        playerPreview:Show()
+        previewFrame:Show()
     end)
 
-    playerPreview.fadeOut = playerPreview:CreateAnimationGroup()
-    local fadeOut = playerPreview.fadeOut:CreateAnimation("alpha")
+    previewFrame.fadeOut = previewFrame:CreateAnimationGroup()
+    local fadeOut = previewFrame.fadeOut:CreateAnimation("alpha")
     fadeOut:SetFromAlpha(1)
     fadeOut:SetToAlpha(0)
     fadeOut:SetDuration(0.5)
     fadeOut:SetSmoothing("IN")
     fadeOut:SetScript("OnFinished", function()
-        playerPreview:Hide()
+        previewFrame:Hide()
     end)
 
-    playerPreview.header = CreateFrame("Frame", "CellPlayerPreviewFrameHeader", playerPreview)
-    
-    playerPreview.header.tex = playerPreview.header:CreateTexture(nil, "ARTWORK")
-    playerPreview.header.tex:SetTexture("Interface\\Buttons\\WHITE8x8")
+    previewFrame.header = CreateFrame("Frame", "Cell" .. name .. "PreviewFrameHeader", previewFrame)
+    for i = 1, (headerAmount or 1) do
+        previewFrame.header[i] = previewFrame.header:CreateTexture(nil, "BACKGROUND")
+        previewFrame.header[i]:SetColorTexture(0, 0, 0)
+        previewFrame.header[i]:SetAlpha(0.555)
 
-    playerPreview.header.tex:SetPoint("TOPLEFT", playerPreview.header, "TOPLEFT", P:Scale(1), P:Scale(-1))
-    playerPreview.header.tex:SetPoint("BOTTOMRIGHT", playerPreview.header, "BOTTOMRIGHT", P:Scale(-1), P:Scale(1))
-    
-    playerPreview.header.tex:SetVertexColor(F:ConvertRGB(255, 255, 255, desaturation[1])) -- White
-    playerPreview.header.tex:SetAlpha(0.555)
-end
+        previewFrame.header[i].tex = previewFrame.header:CreateTexture(nil, "ARTWORK")
+        previewFrame.header[i].tex:SetTexture("Interface\\Buttons\\WHITE8x8")
 
-local function UpdatePlayerPreview()
-    if not playerPreview then
-        CreatePlayerPreview()
+        previewFrame.header[i].tex:SetPoint("TOPLEFT", previewFrame.header[i], "TOPLEFT", P:Scale(1), P:Scale(-1))
+        previewFrame.header[i].tex:SetPoint("BOTTOMRIGHT", previewFrame.header[i], "BOTTOMRIGHT", P:Scale(-1), P:Scale(1))
+
+        previewFrame.header[i].tex:SetVertexColor(F:ConvertRGB(255, 0, 102, i % 5 == 0 and desaturation[5] or desaturation[i-floor(i/5)*5]))
+        previewFrame.header[i].tex:SetAlpha(0.555)
     end
 
-    if not selectedLayoutTable["player"]["enabled"] then
-        if playerPreview.timer then
-            playerPreview.timer:Cancel()
-            playerPreview.timer = nil
+    -- Store the preview
+    unitPreviews[which] = {
+        preview = previewFrame,
+        previewAnchor = previewFrameAnchor,
+        previewName = previewFrameName,
+        parentAnchor = parentAnchor
+    }
+end
+
+--- @param which string
+local function UpdatePreviewFrame(which)
+    local layout = unitPreviews[which]
+
+    if not selectedLayoutTable[which]["enabled"] then
+        if layout.preview.timer then
+            layout.preview.timer:Cancel()
+            layout.preview.timer = nil
         end
-        if playerPreview.fadeIn:IsPlaying() then
-            playerPreview.fadeIn:Stop()
+        if layout.preview.fadeIn:IsPlaying() then
+            layout.preview.fadeIn:Stop()
         end
-        if not playerPreview.fadeOut:IsPlaying() then
-            playerPreview.fadeOut:Play()
+        if not layout.preview.fadeOut:IsPlaying() then
+            layout.preview.fadeOut:Play()
         end
         return
     end
 
     -- size
     local width, height
-    if selectedLayoutTable["player"]["sameSizeAsMain"] then
+    if selectedLayoutTable[which]["sameSizeAsMain"] then
         width, height = unpack(selectedLayoutTable["main"]["size"])
     else
-        width, height = unpack(selectedLayoutTable["player"]["size"])
+        width, height = unpack(selectedLayoutTable[which]["size"])
     end
-    P:Size(playerPreview, width, height)
+    P:Size(layout.preview, width, height)
 
     -- arrangement
-    local anchor, spacingX, spacingY
-    if selectedLayoutTable["player"]["sameArrangementAsMain"] then
+    local orientation, anchor, spacingX, spacingY
+    if selectedLayoutTable[which]["sameArrangementAsMain"] then
+        orientation = selectedLayoutTable["main"]["orientation"]
         anchor = selectedLayoutTable["main"]["anchor"]
         spacingX = selectedLayoutTable["main"]["spacingX"]
         spacingY = selectedLayoutTable["main"]["spacingY"]
     else
-        anchor = selectedLayoutTable["player"]["anchor"]
-        spacingX = selectedLayoutTable["player"]["spacingX"]
-        spacingY = selectedLayoutTable["player"]["spacingY"]
+        orientation = selectedLayoutTable["spotlight"]["orientation"]
+        anchor = selectedLayoutTable[which]["anchor"]
+        spacingX = selectedLayoutTable[which]["spacingX"]
+        spacingY = selectedLayoutTable[which]["spacingY"]
     end
 
-    -- update playerPreview point
-    playerPreview:ClearAllPoints()
-    playerPreviewName:ClearAllPoints()
+    -- update preview point
+    layout.preview:ClearAllPoints()
+    layout.previewName:ClearAllPoints()
 
     if CellDB["general"]["menuPosition"] == "top_bottom" then
-        P:Size(playerPreviewAnchor, 20, 10)
+        P:Size(layout.previewAnchor, 20, 10)
         if anchor == "BOTTOMLEFT" then
-            playerPreview:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "TOPLEFT", 0, 4)
-            playerPreviewName:SetPoint("LEFT", playerPreviewAnchor, "RIGHT", 5, 0)
+            layout.preview:SetPoint("BOTTOMLEFT", layout.previewAnchor, "TOPLEFT", 0, 4)
+            layout.previewName:SetPoint("LEFT", layout.previewAnchor, "RIGHT", 5, 0)
         elseif anchor == "BOTTOMRIGHT" then
-            playerPreview:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "TOPRIGHT", 0, 4)
-            playerPreviewName:SetPoint("RIGHT", playerPreviewAnchor, "LEFT", -5, 0)
+            layout.preview:SetPoint("BOTTOMRIGHT", layout.previewAnchor, "TOPRIGHT", 0, 4)
+            layout.previewName:SetPoint("RIGHT", layout.previewAnchor, "LEFT", -5, 0)
         elseif anchor == "TOPLEFT" then
-            playerPreview:SetPoint("TOPLEFT", playerPreviewAnchor, "BOTTOMLEFT", 0, -4)
-            playerPreviewName:SetPoint("LEFT", playerPreviewAnchor, "RIGHT", 5, 0)
+            layout.preview:SetPoint("TOPLEFT", layout.previewAnchor, "BOTTOMLEFT", 0, -4)
+            layout.previewName:SetPoint("LEFT", layout.previewAnchor, "RIGHT", 5, 0)
         elseif anchor == "TOPRIGHT" then
-            playerPreview:SetPoint("TOPRIGHT", playerPreviewAnchor, "BOTTOMRIGHT", 0, -4)
-            playerPreviewName:SetPoint("RIGHT", playerPreviewAnchor, "LEFT", -5, 0)
+            layout.preview:SetPoint("TOPRIGHT", layout.previewAnchor, "BOTTOMRIGHT", 0, -4)
+            layout.previewName:SetPoint("RIGHT", layout.previewAnchor, "LEFT", -5, 0)
         end
     else
-        P:Size(playerPreviewAnchor, 10, 20)
+        P:Size(layout.previewAnchor, 10, 20)
         if anchor == "BOTTOMLEFT" then
-            playerPreview:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "BOTTOMRIGHT", 4, 0)
-            playerPreviewName:SetPoint("TOPLEFT", playerPreviewAnchor, "BOTTOMLEFT", 0, -5)
+            layout.preview:SetPoint("BOTTOMLEFT", layout.previewAnchor, "BOTTOMRIGHT", 4, 0)
+            layout.previewName:SetPoint("TOPLEFT", layout.previewAnchor, "BOTTOMLEFT", 0, -5)
         elseif anchor == "BOTTOMRIGHT" then
-            playerPreview:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "BOTTOMLEFT", -4, 0)
-            playerPreviewName:SetPoint("TOPRIGHT", playerPreviewAnchor, "BOTTOMRIGHT", 0, -5)
+            layout.preview:SetPoint("BOTTOMRIGHT", layout.previewAnchor, "BOTTOMLEFT", -4, 0)
+            layout.previewName:SetPoint("TOPRIGHT", layout.previewAnchor, "BOTTOMRIGHT", 0, -5)
         elseif anchor == "TOPLEFT" then
-            playerPreview:SetPoint("TOPLEFT", playerPreviewAnchor, "TOPRIGHT", 4, 0)
-            playerPreviewName:SetPoint("BOTTOMLEFT", playerPreviewAnchor, "TOPLEFT", 0, 5)
+            layout.preview:SetPoint("TOPLEFT", layout.previewAnchor, "TOPRIGHT", 4, 0)
+            layout.previewName:SetPoint("BOTTOMLEFT", layout.previewAnchor, "TOPLEFT", 0, 5)
         elseif anchor == "TOPRIGHT" then
-            playerPreview:SetPoint("TOPRIGHT", playerPreviewAnchor, "TOPLEFT", -4, 0)
-            playerPreviewName:SetPoint("BOTTOMRIGHT", playerPreviewAnchor, "TOPRIGHT", 0, 5)
+            layout.preview:SetPoint("TOPRIGHT", layout.previewAnchor, "TOPLEFT", -4, 0)
+            layout.previewName:SetPoint("BOTTOMRIGHT", layout.previewAnchor, "TOPRIGHT", 0, 5)
         end
     end
 
-    -- update playerAnchor point
-    playerPreviewAnchor:ClearAllPoints()
+    -- update previewAnchor point
+    layout.previewAnchor:ClearAllPoints()
     if selectedLayout == Cell.vars.currentLayout then
-        playerPreviewAnchor:EnableMouse(false)
-        playerPreviewAnchor:SetAllPoints(Cell.frames.playerFrameAnchor)
+        layout.previewAnchor:EnableMouse(false)
+        layout.previewAnchor:SetAllPoints(layout.parentAnchor)
     else
-        playerPreviewAnchor:EnableMouse(true)
-        if not P:LoadPosition(playerPreviewAnchor, selectedLayoutTable["player"]["position"]) then
-            playerPreviewAnchor:SetPoint("TOPLEFT", UIParent, "CENTER")
+        layout.previewAnchor:EnableMouse(true)
+        if not P:LoadPosition(layout.previewAnchor, selectedLayoutTable[which]["position"]) then
+            layout.previewAnchor:SetPoint("TOPLEFT", UIParent, "CENTER")
         end
     end
-    playerPreviewAnchor:Show()
-    playerPreviewName:SetText(L["Layout"] .. ": " .. selectedLayout .. " (player)")
-    playerPreviewName:Show()
+    layout.previewAnchor:Show()
+    layout.previewName:Show()
 
     -- re-arrange
-    local header = playerPreview.header
+    local header = layout.preview.header
     header:ClearAllPoints()
 
     -- anchor
-    local point, anchorPoint, unitSpacing
-    if anchor == "BOTTOMLEFT" then
-        point, anchorPoint = "BOTTOMLEFT", "TOPLEFT"
-        unitSpacing = spacingY
-    elseif anchor == "BOTTOMRIGHT" then
-        point, anchorPoint = "BOTTOMRIGHT", "TOPRIGHT"
-        unitSpacing = spacingY
-    elseif anchor == "TOPLEFT" then
-        point, anchorPoint = "TOPLEFT", "BOTTOMLEFT"
-        unitSpacing = -spacingY
-    elseif anchor == "TOPRIGHT" then
-        point, anchorPoint = "TOPRIGHT", "BOTTOMRIGHT"
-        unitSpacing = -spacingY
+    local point, anchorPoint, groupPoint, unitSpacingX, unitSpacingY
+    if strfind(orientation, "^vertical") then
+        if anchor == "BOTTOMLEFT" then
+            point, anchorPoint = "BOTTOMLEFT", "TOPLEFT"
+            groupPoint = "BOTTOMRIGHT"
+            unitSpacingX = spacingX
+            unitSpacingY = spacingY
+        elseif anchor == "BOTTOMRIGHT" then
+            point, anchorPoint = "BOTTOMRIGHT", "TOPRIGHT"
+            groupPoint = "BOTTOMLEFT"
+            unitSpacingX = -spacingX
+            unitSpacingY = spacingY
+        elseif anchor == "TOPLEFT" then
+            point, anchorPoint = "TOPLEFT", "BOTTOMLEFT"
+            groupPoint = "TOPRIGHT"
+            unitSpacingX = spacingX
+            unitSpacingY = -spacingY
+        elseif anchor == "TOPRIGHT" then
+            point, anchorPoint = "TOPRIGHT", "BOTTOMRIGHT"
+            groupPoint = "TOPLEFT"
+            unitSpacingX = -spacingX
+            unitSpacingY = -spacingY
+        end
+    else
+        if anchor == "BOTTOMLEFT" then
+            point, anchorPoint = "BOTTOMLEFT", "BOTTOMRIGHT"
+            groupPoint = "TOPLEFT"
+            unitSpacingX = spacingX
+            unitSpacingY = spacingY
+        elseif anchor == "BOTTOMRIGHT" then
+            point, anchorPoint = "BOTTOMRIGHT", "BOTTOMLEFT"
+            groupPoint = "TOPRIGHT"
+            unitSpacingX = -spacingX
+            unitSpacingY = spacingY
+        elseif anchor == "TOPLEFT" then
+            point, anchorPoint = "TOPLEFT", "TOPRIGHT"
+            groupPoint = "BOTTOMLEFT"
+            unitSpacingX = spacingX
+            unitSpacingY = -spacingY
+        elseif anchor == "TOPRIGHT" then
+            point, anchorPoint = "TOPRIGHT", "TOPLEFT"
+            groupPoint = "BOTTOMRIGHT"
+            unitSpacingX = -spacingX
+            unitSpacingY = -spacingY
+        end
     end
 
     P:Size(header, width, height)
     header:SetPoint(point)
 
-    P:Size(header, width, height)
-    header:ClearAllPoints()
-    header:SetPoint(point)
-
-    if not playerPreview:IsShown() then
-        playerPreview.fadeIn:Play()
+    for i = 1, #header do
+        P:Size(header[i], width, height)
+        header[i]:ClearAllPoints()
+        if i == 1 then
+            header[i]:SetPoint(point)
+        else
+            if strfind(orientation, "^vertical") then
+                if i % 5 == 1 and orientation == "vertical" then
+                    header[i]:SetPoint(point, header[i-5], groupPoint, unitSpacingX, 0)
+                else
+                    header[i]:SetPoint(point, header[i-1], anchorPoint, 0, unitSpacingY)
+                end
+            else
+                if i % 5 == 1 and orientation == "horizontal" then
+                    header[i]:SetPoint(point, header[i-5], groupPoint, 0, unitSpacingY)
+                else
+                    header[i]:SetPoint(point, header[i-1], anchorPoint, unitSpacingX, 0)
+                end
+            end
+        end
     end
 
-    if playerPreview.fadeOut:IsPlaying() then
-        playerPreview.fadeOut:Stop()
+    if not layout.preview:IsShown() then
+        layout.preview.fadeIn:Play()
     end
 
-    if playerPreview.timer then
-        playerPreview.timer:Cancel()
+    if layout.preview.fadeOut:IsPlaying() then
+        layout.preview.fadeOut:Stop()
+    end
+
+    if layout.preview.timer then
+        layout.preview.timer:Cancel()
     end
 
     if previewMode == 0 then
-        playerPreview.timer = C_Timer.NewTimer(1, function()
-            playerPreview.fadeOut:Play()
-            playerPreview.timer = nil
+        layout.preview.timer = C_Timer.NewTimer(1, function()
+            layout.preview.fadeOut:Play()
+            layout.preview.timer = nil
         end)
     end
+end
+
+-------------------------------------------------
+-- player preview
+-------------------------------------------------
+local function UpdatePlayerPreview()
+    if not unitPreviews["player"] then
+      CreatePreviewFrame("player", "Player", Cell.frames.playerFrameAnchor)
+    end
+
+    UpdatePreviewFrame("player")
 end
 
 -------------------------------------------------
@@ -1520,15 +1610,15 @@ local function HidePreviews()
         spotlightPreview.fadeOut:Play()
     end
     
-    if playerPreview.timer then
-        playerPreview.timer:Cancel()
-        playerPreview.timer = nil
+    if unitPreviews["player"].preview.timer then
+        unitPreviews["player"].preview.timer:Cancel()
+        unitPreviews["player"].preview.timer = nil
     end
-    if playerPreview.fadeIn:IsPlaying() then
-        playerPreview.fadeIn:Stop()
+    if unitPreviews["player"].preview.fadeIn:IsPlaying() then
+        unitPreviews["player"].preview.fadeIn:Stop()
     end
-    if not playerPreview.fadeOut:IsPlaying() then
-        playerPreview.fadeOut:Play()
+    if not unitPreviews["player"].preview.fadeOut:IsPlaying() then
+        unitPreviews["player"].preview.fadeOut:Play()
     end
 end
 
@@ -2151,8 +2241,8 @@ local function CreateGroupFilterPane()
             if spotlightPreview:IsShown() then
                 spotlightPreview.fadeOut:Play()
             end
-            if playerPreview:IsShown() then
-                playerPreview.fadeOut:Play()
+            if unitPreviews["player"].preview:IsShown() then
+                unitPreviews["player"].preview.fadeOut:Play()
             end
         elseif previewMode == 1 then
             previewModeButton:SetText(L["Preview"]..": "..L["Party"])
@@ -2758,7 +2848,7 @@ local function CreateLayoutSetupPane()
         if checked then
             UpdatePlayerPreview()
         else
-            if playerPreview:IsShown() then
+            if unitPreviews["player"].preview:IsShown() then
                 UpdatePlayerPreview()
             end
         end
