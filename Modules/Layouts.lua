@@ -2896,13 +2896,13 @@ local function CreateLayoutSetupPane()
         end
     end)
 
-     --* player -------------------------------------
-     pages.player = CreateFrame("Frame", nil, layoutsTab)
-     pages.player:SetAllPoints(layoutSetupPane)
-     pages.player:Hide()
- 
-     playerFrameCB = Cell:CreateCheckButton(pages.player, L["Enable Player Frame"], function(checked)
-     selectedLayoutTable["player"]["enabled"] = checked
+    --* player -------------------------------------
+    pages.player = CreateFrame("Frame", nil, layoutsTab)
+    pages.player:SetAllPoints(layoutSetupPane)
+    pages.player:Hide()
+
+    playerFrameCB = Cell:CreateCheckButton(pages.player, L["Enable Player Frame"], function(checked)
+    selectedLayoutTable["player"]["enabled"] = checked
         if checked then
             UpdatePlayerPreview()
         else
@@ -2911,18 +2911,18 @@ local function CreateLayoutSetupPane()
             end
         end
         if selectedLayout == Cell.vars.currentLayout then
-             Cell:Fire("UpdateLayout", selectedLayout, "player")
-         end
-     end)
-     playerFrameCB:SetPoint("TOPLEFT", 5, -27)
+            Cell:Fire("UpdateLayout", selectedLayout, "player")
+        end
+    end)
+    playerFrameCB:SetPoint("TOPLEFT", 5, -27)
 
-     --* target -------------------------------------
-     pages.target = CreateFrame("Frame", nil, layoutsTab)
-     pages.target:SetAllPoints(layoutSetupPane)
-     pages.target:Hide()
- 
-     targetFrameCB = Cell:CreateCheckButton(pages.target, L["Enable Target Frame"], function(checked)
-     selectedLayoutTable["target"]["enabled"] = checked
+    --* target -------------------------------------
+    pages.target = CreateFrame("Frame", nil, layoutsTab)
+    pages.target:SetAllPoints(layoutSetupPane)
+    pages.target:Hide()
+
+    targetFrameCB = Cell:CreateCheckButton(pages.target, L["Enable Target Frame"], function(checked)
+    selectedLayoutTable["target"]["enabled"] = checked
         if checked then
             UpdateTargetPreview()
         else
@@ -2931,18 +2931,18 @@ local function CreateLayoutSetupPane()
             end
         end
         if selectedLayout == Cell.vars.currentLayout then
-             Cell:Fire("UpdateLayout", selectedLayout, "target")
-         end
-     end)
-     targetFrameCB:SetPoint("TOPLEFT", 5, -27)
+            Cell:Fire("UpdateLayout", selectedLayout, "target")
+        end
+    end)
+    targetFrameCB:SetPoint("TOPLEFT", 5, -27)
 
-     --* focus -------------------------------------
-     pages.focus = CreateFrame("Frame", nil, layoutsTab)
-     pages.focus:SetAllPoints(layoutSetupPane)
-     pages.focus:Hide()
- 
-     focusFrameCB = Cell:CreateCheckButton(pages.focus, L["Enable Focus Frame"], function(checked)
-     selectedLayoutTable["focus"]["enabled"] = checked
+    --* focus -------------------------------------
+    pages.focus = CreateFrame("Frame", nil, layoutsTab)
+    pages.focus:SetAllPoints(layoutSetupPane)
+    pages.focus:Hide()
+
+    focusFrameCB = Cell:CreateCheckButton(pages.focus, L["Enable Focus Frame"], function(checked)
+        selectedLayoutTable["focus"]["enabled"] = checked
         if checked then
             UpdateFocusPreview()
         else
@@ -2951,10 +2951,10 @@ local function CreateLayoutSetupPane()
             end
         end
         if selectedLayout == Cell.vars.currentLayout then
-             Cell:Fire("UpdateLayout", selectedLayout, "focus")
-         end
-     end)
-     focusFrameCB:SetPoint("TOPLEFT", 5, -27)
+            Cell:Fire("UpdateLayout", selectedLayout, "focus")
+        end
+    end)
+    focusFrameCB:SetPoint("TOPLEFT", 5, -27)
 
     -- button group
     Cell:CreateButtonGroup({main, pet, npc, spotlight, player, target, focus}, function(tab)
