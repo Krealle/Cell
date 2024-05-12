@@ -53,5 +53,6 @@ RaidFrames\Groups\NPCFrame.lua
 RaidFrames\Groups\SpotlightFrame.lua
 RaidFrames\Units\PlayerFrame.lua
 RaidFrames\Units\TargetFrame.lua
+RaidFrames\Units\FocusFrame.lua
 
 Patrons.lua

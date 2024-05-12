@@ -1574,6 +1574,17 @@ local function UpdateTargetPreview()
 end
 
 -------------------------------------------------
+-- target preview
+-------------------------------------------------
+local function UpdateFocusPreview()
+  if not unitPreviews["focus"] then
+    CreatePreviewFrame("focus", "Focus Frame", Cell.frames.focusFrameAnchor)
+  end
+
+  UpdatePreviewFrame("focus")
+end
+
+-------------------------------------------------
 -- hide previews
 -------------------------------------------------
 local function HidePreviews()
@@ -2409,6 +2420,7 @@ local function CreateGroupFilterPane()
             UpdateSpotlightPreview()
             UpdatePlayerPreview()
             UpdateTargetPreview()
+            UpdateFocusPreview()
         else
             previewModeButton:SetText(L["Preview"]..": "..L["Raid"])
             UpdateLayoutPreview()
@@ -2417,6 +2429,7 @@ local function CreateGroupFilterPane()
             UpdateSpotlightPreview()
             UpdatePlayerPreview()
             UpdateTargetPreview()
+            UpdateFocusPreview()
         end
     end)
     previewModeButton:SetScript("OnHide", function()
@@ -2441,7 +2454,7 @@ local orientationDropdown, anchorDropdown, spacingXSlider, spacingYSlider
 
 local sameSizeAsMainCB, sameArrangementAsMainCB
 local combineGroupsCB, sortByRoleCB, roleOrderWidget, hideSelfCB
-local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB, playerFrameCB, targetFrameCB
+local showNpcCB, separateNpcCB, spotlightCB, hidePlaceholderCB, spotlightOrientationDropdown, partyPetsCB, raidPetsCB, playerFrameCB, targetFrameCB, focusFrameCB
 
 local function UpdateSize()
     if selectedLayout == Cell.vars.currentLayout then
@@ -2466,6 +2479,9 @@ local function UpdateSize()
         if selectedLayoutTable["target"]["sameSizeAsMain"] then
             UpdateTargetPreview()
         end
+        if selectedLayoutTable["focus"]["sameSizeAsMain"] then
+            UpdateFocusPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
@@ -2476,6 +2492,8 @@ local function UpdateSize()
         UpdatePlayerPreview()
     elseif selectedPage == "target" then
         UpdateTargetPreview()
+    elseif selectedPage == "focus" then
+        UpdateFocusPreview()
     end
 end
 
@@ -2501,6 +2519,9 @@ local function UpdateArrangement()
         if selectedLayoutTable["target"]["sameArrangementAsMain"] then
             UpdateTargetPreview()
         end
+        if selectedLayoutTable["focus"]["sameArrangementAsMain"] then
+            UpdateFocusPreview()
+        end
     elseif selectedPage == "pet" then
         UpdateRaidPetPreview()
     elseif selectedPage == "npc" then
@@ -2511,6 +2532,8 @@ local function UpdateArrangement()
         UpdatePlayerPreview()
     elseif selectedPage == "target" then
         UpdateTargetPreview()
+    elseif selectedPage == "focus" then
+        UpdateFocusPreview()
     end
 end
 
@@ -2621,6 +2644,10 @@ local function CreateLayoutSetupPane()
     local target = Cell:CreateButton(layoutSetupPane, L["Target"], "accent-hover", {70, 17})
     target:SetPoint("TOPLEFT", player, "TOPRIGHT", P:Scale(-1), 0)
     target.id = "target"
+
+    local focus = Cell:CreateButton(layoutSetupPane, L["Focus"], "accent-hover", {70, 17})
+    focus:SetPoint("TOPLEFT", target, "TOPRIGHT", P:Scale(-1), 0)
+    focus.id = "focus"
 
     -- same size as main
     sameSizeAsMainCB = Cell:CreateCheckButton(layoutSetupPane, L["Use Same Size As Main"], function(checked, self)
@@ -3049,8 +3076,28 @@ local function CreateLayoutSetupPane()
      end)
      targetFrameCB:SetPoint("TOPLEFT", 5, -27)
 
+     --* focus -------------------------------------
+     pages.focus = CreateFrame("Frame", nil, layoutsTab)
+     pages.focus:SetAllPoints(layoutSetupPane)
+     pages.focus:Hide()
+ 
+     focusFrameCB = Cell:CreateCheckButton(pages.focus, L["Enable Focus Frame"], function(checked)
+     selectedLayoutTable["focus"]["enabled"] = checked
+        if checked then
+            UpdateFocusPreview()
+        else
+            if unitPreviews["focus"].preview:IsShown() then
+                UpdateFocusPreview()
+            end
+        end
+        if selectedLayout == Cell.vars.currentLayout then
+             Cell:Fire("UpdateLayout", selectedLayout, "focus")
+         end
+     end)
+     focusFrameCB:SetPoint("TOPLEFT", 5, -27)
+
     -- button group
-    Cell:CreateButtonGroup({main, pet, npc, spotlight, player, target}, function(tab)
+    Cell:CreateButtonGroup({main, pet, npc, spotlight, player, target, focus}, function(tab)
         selectedPage = tab
 
         -- load
@@ -3069,6 +3116,8 @@ local function CreateLayoutSetupPane()
             sameSizeAsMainCB:SetPoint("TOPLEFT", playerFrameCB, "BOTTOMLEFT", 0, -14)
         elseif tab == "target" then
             sameSizeAsMainCB:SetPoint("TOPLEFT", targetFrameCB, "BOTTOMLEFT", 0, -14)
+        elseif tab == "focus" then
+            sameSizeAsMainCB:SetPoint("TOPLEFT", focusFrameCB, "BOTTOMLEFT", 0, -14)
         end
         
         widthSlider:ClearAllPoints()
@@ -3287,6 +3336,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
     hidePlaceholderCB:SetChecked(selectedLayoutTable["spotlight"]["hidePlaceholder"])
     playerFrameCB:SetChecked(selectedLayoutTable["player"]["enabled"])
     targetFrameCB:SetChecked(selectedLayoutTable["target"]["enabled"])
+    focusFrameCB:SetChecked(selectedLayoutTable["focus"]["enabled"])
 
     UpdateGroupFilter()
     UpdatePreviewButton()
@@ -3297,6 +3347,7 @@ LoadLayoutDB = function(layout, dontShowPreview)
         UpdateSpotlightPreview()
         UpdatePlayerPreview()
         UpdateTargetPreview()
+        UpdateFocusPreview()
     end
 end
 

@@ -25,6 +25,7 @@ Cell.unitButtons = {
     },
     ["player"] = {},
     ["target"] = {},
+    ["focus"] = {},
 }
 
 -- local hoverTop, hoverBottom, hoverLeft, hoverRight
