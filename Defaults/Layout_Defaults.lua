@@ -94,7 +94,7 @@ Cell.defaults.layout = {
         ["spacingY"] = 3,
     },
     ["player"] = {
-        ["enabled"] = true,
+        ["enabled"] = false,
         ["sameSizeAsMain"] = true,
         ["sameArrangementAsMain"] = true,
         ["size"] = {66, 46},
@@ -106,7 +106,7 @@ Cell.defaults.layout = {
         ["spacingY"] = 3,
     },
     ["target"] = {
-        ["enabled"] = true,
+        ["enabled"] = false,
         ["sameSizeAsMain"] = true,
         ["sameArrangementAsMain"] = true,
         ["size"] = {66, 46},
