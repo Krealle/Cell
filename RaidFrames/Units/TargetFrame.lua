@@ -7,7 +7,6 @@ local P = Cell.pixelPerfectFuncs
 
 local unit = "target"
 
--- TargetFrame
 local targetFrame, anchorFrame, hoverFrame, config, menu = B:CreateBaseUnitFrame(unit, "Target Frame")
 Cell.frames.targetFrame = targetFrame
 Cell.frames.targetFrameAnchor = anchorFrame
@@ -15,12 +14,11 @@ Cell.frames.targetFrameAnchor = anchorFrame
 local targetButton = CreateFrame("Button", "CellTargetButton", targetFrame, "CellUnitButtonTemplate")
 targetButton:SetAttribute("unit", unit)
 targetButton:SetPoint("TOPLEFT")
-targetButton:RegisterEvent("PLAYER_TARGET_CHANGED")
-targetButton:SetScript("OnEvent", function(self, event)
-    -- Make sure we update target changes
-      B.UpdateAll(self)
+targetButton:SetScript("OnEvent", function(self,event) 
+    -- This is a lil hack to get around the OnUpdate throttle
+    -- This frame should always be fully refreshed when focus changes
+    if event == "PLAYER_TARGET_CHANGED" then targetButton:Hide() end
 end)
-targetButton:Show()
 Cell.unitButtons.target[unit] = targetButton
 
 -------------------------------------------------
@@ -46,11 +44,11 @@ Cell:RegisterCallback("UpdatePixelPerfect", "TargetFrame_UpdatePixelPerfect", Up
 local function TargetFrame_UpdateVisibility(which)
     if not which or which == unit then
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
-            RegisterAttributeDriver(targetButton, "state-visibility", "[@target,exists]show;hide")
+            RegisterUnitWatch(targetButton)
         else
-            UnregisterAttributeDriver(targetButton, "state-visibility")
+            UnregisterUnitWatch(targetButton)
             targetFrame:Hide()
         end
     end
-  end
-  Cell:RegisterCallback("UpdateVisibility", "TargetFrame_UpdateVisibility", TargetFrame_UpdateVisibility)
+end
+Cell:RegisterCallback("UpdateVisibility", "TargetFrame_UpdateVisibility", TargetFrame_UpdateVisibility)
