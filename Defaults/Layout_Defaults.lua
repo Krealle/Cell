@@ -99,6 +99,7 @@ Cell.defaults.layout = {
         ["sameArrangementAsMain"] = true,
         ["size"] = {66, 46},
         ["position"] = {},
+        ["tooltipPosition"] = {},
         ["powerSize"] = 2,
         ["orientation"] = "vertical",
         ["anchor"] = "TOPLEFT",
