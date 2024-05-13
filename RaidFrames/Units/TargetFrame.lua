@@ -14,7 +14,7 @@ Cell.frames.targetFrameAnchor = anchorFrame
 local targetButton = CreateFrame("Button", "CellTargetButton", targetFrame, "CellUnitButtonTemplate")
 targetButton:SetAttribute("unit", unit)
 targetButton:SetPoint("TOPLEFT")
-targetButton:SetScript("OnEvent", function(self,event) 
+targetButton:HookScript("OnEvent", function(self,event) 
     -- This is a lil hack to get around the OnUpdate throttle
     -- This frame should always be fully refreshed when focus changes
     if event == "PLAYER_TARGET_CHANGED" then targetButton:Hide() end
