@@ -2497,6 +2497,7 @@ local function UnitButton_RegisterEvents(self)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
 
     self:RegisterEvent("PLAYER_TARGET_CHANGED")
+    self:RegisterEvent("PLAYER_FOCUS_CHANGED")
 
     if Cell.loaded then
         if enabledIndicators["playerRaidIcon"] then
