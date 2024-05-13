@@ -3483,6 +3483,247 @@ B.UpdateHealthMax = UnitButton_UpdateHealthMax
 B.UpdateAuras = UnitButton_UpdateAuras
 B.UpdateName = UnitButton_UpdateName
 
+function B:SaveTooltipPosition(unit, tooltipPoint, tooltipRelativePoint, tooltipX, tooltipY)
+    Cell.vars.currentLayoutTable[unit]["tooltipPosition"] = {tooltipPoint, tooltipRelativePoint, tooltipX, tooltipY}
+end
+
+function B:CreateBaseUnitFrame(unit, configTitle, onEnterLogic)
+    local name = unit:gsub("^%l", string.upper)
+    local frame = CreateFrame("Frame", "Cell".. name .."Frame", Cell.frames.mainFrame, "SecureFrameTemplate")
+    
+    -- Anchor
+    local anchorFrame = CreateFrame("Frame", "Cell".. name .."AnchorFrame", frame)
+    PixelUtil.SetPoint(anchorFrame, "TOPLEFT", UIParent, "CENTER", 1, -1)
+    anchorFrame:SetMovable(true)
+    anchorFrame:SetClampedToScreen(true)
+    
+    -- Hover
+    local hoverFrame = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    hoverFrame:SetPoint("TOP", anchorFrame, 0, 1)
+    hoverFrame:SetPoint("BOTTOM", anchorFrame, 0, -1)
+    hoverFrame:SetPoint("LEFT", anchorFrame, -1, 0)
+    hoverFrame:SetPoint("RIGHT", anchorFrame, 1, 0)
+    
+    A:ApplyFadeInOutToMenu(anchorFrame, hoverFrame)
+
+    local config = Cell:CreateButton(anchorFrame, nil, "accent", {20, 10}, false, true, nil, nil, "SecureHandlerAttributeTemplate,SecureHandlerClickTemplate")
+    config:SetFrameStrata("MEDIUM")
+    config:SetAllPoints(anchorFrame)
+    config:RegisterForDrag("LeftButton")
+    config:SetScript("OnDragStart", function()
+        anchorFrame:StartMoving()
+        anchorFrame:SetUserPlaced(false)
+    end)
+    config:SetScript("OnDragStop", function()
+        anchorFrame:StopMovingOrSizing()
+        P:SavePosition(anchorFrame, Cell.vars.currentLayoutTable[unit]["position"])
+    end)
+    config:HookScript("OnEnter", function()
+        hoverFrame:GetScript("OnEnter")(hoverFrame)
+        CellTooltip:SetOwner(config, "ANCHOR_NONE")
+
+        local tooltipPoint, tooltipRelativePoint, tooltipX, tooltipY = unpack(Cell.vars.currentLayoutTable[unit]["tooltipPosition"])
+        P:Point(CellTooltip, tooltipPoint, config, tooltipRelativePoint, tooltipX, tooltipY)
+
+        CellTooltip:AddLine(L[configTitle])
+
+        -- Execute additional logic passed to the function
+        if type(onEnterLogic) == "function" then
+            onEnterLogic(CellTooltip)
+        end
+
+        CellTooltip:Show()
+    end)
+    config:HookScript("OnLeave", function()
+        hoverFrame:GetScript("OnLeave")(hoverFrame)
+        CellTooltip:Hide()
+    end)
+
+    menu = CreateFrame("Frame", "Cell".. name .."FrameMenu", frame, "BackdropTemplate,SecureHandlerAttributeTemplate,SecureHandlerShowHideTemplate")
+    menu:SetFrameStrata("TOOLTIP")
+    menu:SetClampedToScreen(true)
+    menu:Hide()
+
+    return frame, anchorFrame, hoverFrame, config, menu
+end
+
+function B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+    local layout = Cell.vars.currentLayoutTable
+    
+    local anchor
+    if layout[unit]["sameArrangementAsMain"] then
+        anchor = layout["main"]["anchor"]
+    else
+        anchor = layout[unit]["anchor"]
+    end
+
+    frame:ClearAllPoints()
+    -- NOTE: detach from PreviewAnchor
+    P:LoadPosition(anchorFrame, layout[unit]["position"])
+    
+    if CellDB["general"]["menuPosition"] == "top_bottom" then
+        P:Size(anchorFrame, 20, 10)
+        
+        if anchor == "BOTTOMLEFT" then
+            P:Point(frame, "BOTTOMLEFT", anchorFrame, "TOPLEFT", 0, 4)
+            B:SaveTooltipPosition(unit, "TOPLEFT", "BOTTOMLEFT", 0, -3)
+        elseif anchor == "BOTTOMRIGHT" then
+            P:Point(frame, "BOTTOMRIGHT", anchorFrame, "TOPRIGHT", 0, 4)
+            B:SaveTooltipPosition(unit, "TOPRIGHT", "BOTTOMRIGHT", 0, -3)
+        elseif anchor == "TOPLEFT" then
+            P:Point(frame, "TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -4)
+            B:SaveTooltipPosition(unit, "BOTTOMLEFT", "TOPLEFT", 0, 3)
+        elseif anchor == "TOPRIGHT" then
+            P:Point(frame, "TOPRIGHT", anchorFrame, "BOTTOMRIGHT", 0, -4)
+            B:SaveTooltipPosition(unit, "BOTTOMRIGHT", "TOPRIGHT", 0, 3)
+        end
+    else -- left_right
+        P:Size(anchorFrame, 10, 20)
+
+        if anchor == "BOTTOMLEFT" then
+            P:Point(frame, "BOTTOMLEFT", anchorFrame, "BOTTOMRIGHT", 4, 0)
+            B:SaveTooltipPosition(unit, "BOTTOMRIGHT", "BOTTOMLEFT", -3, 0)
+        elseif anchor == "BOTTOMRIGHT" then
+            P:Point(frame, "BOTTOMRIGHT", anchorFrame, "BOTTOMLEFT", -4, 0)
+            B:SaveTooltipPosition(unit, "BOTTOMLEFT", "BOTTOMRIGHT", 3, 0)
+        elseif anchor == "TOPLEFT" then
+            P:Point(frame, "TOPLEFT", anchorFrame, "TOPRIGHT", 4, 0)
+            B:SaveTooltipPosition(unit, "TOPRIGHT", "TOPLEFT", -3, 0)
+        elseif anchor == "TOPRIGHT" then
+            P:Point(frame, "TOPRIGHT", anchorFrame, "TOPLEFT", -4, 0)
+            B:SaveTooltipPosition(unit, "TOPLEFT", "TOPRIGHT", 3, 0)
+        end
+    end
+end
+
+function B:UpdateUnitFrameLayout(unit, which, frame, anchorFrame, button, menu)
+    layout = Cell.vars.currentLayoutTable
+
+    -- Size
+    if not which or strfind(which, "size$") then
+        local width, height
+        if layout[unit]["sameSizeAsMain"] then
+            width, height = unpack(layout["main"]["size"])
+        else
+            width, height = unpack(layout[unit]["size"])
+        end
+
+        P:Size(button, width, height)
+    end
+
+    -- Anchor points
+    if not which or strfind(which, "arrangement$") then
+        local anchor, spacingX, spacingY
+        if layout[unit]["sameArrangementAsMain"] then
+            anchor = layout["main"]["anchor"]
+            spacingX = layout["main"]["spacingX"]
+            spacingY = layout["main"]["spacingY"]
+        else
+            anchor = layout[unit]["anchor"]
+            spacingX = layout[unit]["spacingX"]
+            spacingY = layout[unit]["spacingY"]
+        end
+
+        -- anchors
+        local point, anchorPoint, groupPoint, unitSpacingX, unitSpacingY
+        local menuAnchorPoint, menuX, menuY
+        
+        if anchor == "BOTTOMLEFT" then
+            point, anchorPoint = "BOTTOMLEFT", "TOPLEFT"
+            groupPoint = "BOTTOMRIGHT"
+            unitSpacingX = spacingX
+            unitSpacingY = spacingY
+            menuAnchorPoint = "BOTTOMRIGHT"
+            menuX, menuY = 4, 0
+        elseif anchor == "BOTTOMRIGHT" then
+            point, anchorPoint = "BOTTOMRIGHT", "TOPRIGHT"
+            groupPoint = "BOTTOMLEFT"
+            unitSpacingX = -spacingX
+            unitSpacingY = spacingY
+            menuAnchorPoint = "BOTTOMLEFT"
+            menuX, menuY = -4, 0
+        elseif anchor == "TOPLEFT" then
+            point, anchorPoint = "TOPLEFT", "BOTTOMLEFT"
+            groupPoint = "TOPRIGHT"
+            unitSpacingX = spacingX
+            unitSpacingY = -spacingY
+            menuAnchorPoint = "TOPRIGHT"
+            menuX, menuY = 4, 0
+        elseif anchor == "TOPRIGHT" then
+            point, anchorPoint = "TOPRIGHT", "BOTTOMRIGHT"
+            groupPoint = "TOPLEFT"
+            unitSpacingX = -spacingX
+            unitSpacingY = -spacingY
+            menuAnchorPoint = "TOPLEFT"
+            menuX, menuY = -4, 0
+        end
+        
+        menu:SetAttribute("point", point)
+        menu:SetAttribute("anchorPoint", menuAnchorPoint)
+        menu:SetAttribute("xOffset", menuX)
+        menu:SetAttribute("yOffset", menuY)
+        menu:Hide()
+        
+        button:ClearAllPoints()
+        
+        button:SetPoint(point, anchorFrame, anchorPoint, 0, unitSpacingY)
+        
+        B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+        
+    end
+
+    -- NOTE: SetOrientation BEFORE SetPowerSize
+    if not which or which == "barOrientation" then
+        B:SetOrientation(button, layout["barOrientation"][1], layout["barOrientation"][2])
+    end
+
+    if not which or strfind(which, "power$") or which == "barOrientation" then
+        if layout[unit]["sameSizeAsMain"] then
+            B:SetPowerSize(button, layout["main"]["powerSize"])
+        else
+            B:SetPowerSize(button, layout[unit]["powerSize"])
+        end
+    end
+
+    if not which or which == unit then
+        if layout[unit]["enabled"] then
+            frame:Show()
+        else
+            frame:Hide()
+            menu:Hide()
+        end
+    end
+
+    -- load position
+    if not P:LoadPosition(anchorFrame, layout[unit]["position"]) then
+        P:ClearPoints(anchorFrame)
+        -- no position, use default
+        anchorFrame:SetPoint("TOPLEFT", UIParent, "CENTER")
+    end
+end
+
+function B:UpdateUnitFrameMenu(which, unit, frame, anchorFrame, config)
+    if not which or which == "lock" then
+        if CellDB["general"]["locked"] then
+            config:RegisterForDrag()
+        else
+            config:RegisterForDrag("LeftButton")
+        end
+    end
+
+    if not which or which == "fadeOut" then
+        if CellDB["general"]["fadeOut"] then
+            anchorFrame.fadeOut:Play()
+        else
+            anchorFrame.fadeIn:Play()
+        end
+    end
+
+    if which == "position" then
+        B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+    end
+end
+
 -------------------------------------------------
 -- unit button init
 -------------------------------------------------
