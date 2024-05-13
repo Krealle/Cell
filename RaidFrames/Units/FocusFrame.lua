@@ -14,12 +14,12 @@ Cell.frames.focusFrameAnchor = anchorFrame
 local focusButton = CreateFrame("Button", "CellFocusButton", focusFrame, "CellUnitButtonTemplate")
 focusButton:SetAttribute("unit", unit)
 focusButton:SetPoint("TOPLEFT")
+focusButton:SetScript("OnEvent", function(self,event) 
+    -- This is a lil hack to get around the OnUpdate throttle
+    -- This frame should always be fully refreshed when focus changes
+    if event == "PLAYER_FOCUS_CHANGED" then focusButton:Hide() end
+end)
 Cell.unitButtons.focus[unit] = focusButton
-
--- Make sure we update frame info when focus target changes
--- This is needed to prevent getting a delayed frame update
-local targetListener = CreateFrame("FRAME", "CellFocusButtonTargetListener")
-targetListener:SetScript("OnEvent", function() B.UpdateAll(focusButton) end)
 
 -------------------------------------------------
 -- callbacks
@@ -45,10 +45,8 @@ local function FocusFrame_UpdateVisibility(which)
     if not which or which == unit then
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
             RegisterUnitWatch(focusButton)
-            targetListener:RegisterEvent("PLAYER_FOCUS_CHANGED")
         else
-            UnRegisterUnitWatch(focusButton)
-            targetListener:UnRegisterEvent("PLAYER_FOCUS_CHANGED")
+            UnregisterUnitWatch(focusButton)
             focusFrame:Hide()
         end
     end
