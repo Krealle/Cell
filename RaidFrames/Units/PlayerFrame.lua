@@ -37,3 +37,15 @@ local function UpdatePixelPerfect()
     config:UpdatePixelPerfect()
 end
 Cell:RegisterCallback("UpdatePixelPerfect", "PlayerFrame_UpdatePixelPerfect", UpdatePixelPerfect)
+
+local function PlayerFrame_UpdateVisibility(which)
+    if not which or which == unit then
+        if Cell.vars.currentLayoutTable[unit]["enabled"] then
+            RegisterAttributeDriver(playerFrame, "state-visibility")
+        else
+            UnregisterAttributeDriver(playerFrame, "state-visibility")
+            playerFrame:Hide()
+        end
+    end
+end
+Cell:RegisterCallback("UpdateVisibility", "PlayerFrame_UpdateVisibility", PlayerFrame_UpdateVisibility)

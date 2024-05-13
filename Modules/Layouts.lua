@@ -3053,6 +3053,7 @@ local function CreateLayoutSetupPane()
         if selectedLayout == Cell.vars.currentLayout then
             Cell:Fire("UpdateLayout", selectedLayout, "player")
         end
+        Cell:Fire("UpdateVisibility", "player")
     end)
     playerFrameCB:SetPoint("TOPLEFT", 5, -27)
 
