@@ -7,7 +7,7 @@ local P = Cell.pixelPerfectFuncs
 
 local unit = "target"
 
-local targetFrame, anchorFrame, hoverFrame, config, menu = B:CreateBaseUnitFrame(unit, "Target Frame")
+local targetFrame, anchorFrame, hoverFrame, config = B:CreateBaseUnitFrame(unit, "Target Frame")
 Cell.frames.targetFrame = targetFrame
 Cell.frames.targetFrameAnchor = anchorFrame
 
@@ -16,7 +16,7 @@ targetButton:SetAttribute("unit", unit)
 targetButton:SetPoint("TOPLEFT")
 targetButton:HookScript("OnEvent", function(self,event) 
     -- This is a lil hack to get around the OnUpdate throttle
-    -- This frame should always be fully refreshed when focus changes
+    -- This frame should always be fully refreshed when target changes
     if event == "PLAYER_TARGET_CHANGED" then targetButton:Hide() end
 end)
 Cell.unitButtons.target[unit] = targetButton
@@ -30,7 +30,7 @@ end
 Cell:RegisterCallback("UpdateMenu", "TargetFrame_UpdateMenu", UpdateMenu)
 
 local function UpdateLayout(_, which)
-    B:UpdateUnitButtonLayout(unit, which, targetButton, anchorFrame, menu)
+    B:UpdateUnitButtonLayout(unit, which, targetButton, anchorFrame)
 end
 Cell:RegisterCallback("UpdateLayout", "TargetFrame_UpdateLayout", UpdateLayout)
 

@@ -7,7 +7,7 @@ local P = Cell.pixelPerfectFuncs
 
 local unit = "focus"
 
-local focusFrame, anchorFrame, hoverFrame, config, menu = B:CreateBaseUnitFrame(unit, "Focus Frame")
+local focusFrame, anchorFrame, hoverFrame, config = B:CreateBaseUnitFrame(unit, "Focus Frame")
 Cell.frames.focusFrame = focusFrame
 Cell.frames.focusFrameAnchor = anchorFrame
 
@@ -30,7 +30,7 @@ end
 Cell:RegisterCallback("UpdateMenu", "FocusFrame_UpdateMenu", UpdateMenu)
 
 local function UpdateLayout(_, which)
-    B:UpdateUnitButtonLayout(unit, which, focusButton, anchorFrame, menu)
+    B:UpdateUnitButtonLayout(unit, which, focusButton, anchorFrame)
 end
 Cell:RegisterCallback("UpdateLayout", "FocusFrame_UpdateLayout", UpdateLayout)
 

@@ -3540,12 +3540,7 @@ function B:CreateBaseUnitFrame(unit, configTitle, onEnterLogic)
         CellTooltip:Hide()
     end)
 
-    menu = CreateFrame("Frame", "Cell".. name .."FrameMenu", frame, "BackdropTemplate,SecureHandlerAttributeTemplate,SecureHandlerShowHideTemplate")
-    menu:SetFrameStrata("TOOLTIP")
-    menu:SetClampedToScreen(true)
-    menu:Hide()
-
-    return frame, anchorFrame, hoverFrame, config, menu
+    return frame, anchorFrame, hoverFrame, config
 end
 
 function B:UpdateUnitButtonPosition(unit, button, anchorFrame)
@@ -3597,7 +3592,7 @@ function B:UpdateUnitButtonPosition(unit, button, anchorFrame)
     end
 end
 
-function B:UpdateUnitButtonLayout(unit, which, button, anchorFrame, menu)
+function B:UpdateUnitButtonLayout(unit, which, button, anchorFrame)
     layout = Cell.vars.currentLayoutTable
 
     -- Size
@@ -3659,12 +3654,6 @@ function B:UpdateUnitButtonLayout(unit, which, button, anchorFrame, menu)
             menuX, menuY = -4, 0
         end
         
-        menu:SetAttribute("point", point)
-        menu:SetAttribute("anchorPoint", menuAnchorPoint)
-        menu:SetAttribute("xOffset", menuX)
-        menu:SetAttribute("yOffset", menuY)
-        menu:Hide()
-        
         button:ClearAllPoints()
         
         button:SetPoint(point, anchorFrame, anchorPoint, 0, unitSpacingY)
@@ -3683,15 +3672,6 @@ function B:UpdateUnitButtonLayout(unit, which, button, anchorFrame, menu)
             B:SetPowerSize(button, layout["main"]["powerSize"])
         else
             B:SetPowerSize(button, layout[unit]["powerSize"])
-        end
-    end
-
-    if not which or which == unit then
-        if layout[unit]["enabled"] then
-            frame:Show()
-        else
-            frame:Hide()
-            menu:Hide()
         end
     end
 

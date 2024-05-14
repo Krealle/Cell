@@ -8,7 +8,7 @@ local P = Cell.pixelPerfectFuncs
 local unit = "player"
 
 -- PlayerFrame
-local playerFrame, anchorFrame, hoverFrame, config, menu = B:CreateBaseUnitFrame(unit, "Player Frame")
+local playerFrame, anchorFrame, hoverFrame, config = B:CreateBaseUnitFrame(unit, "Player Frame")
 Cell.frames.playerFrame = playerFrame
 Cell.frames.playerFrameAnchor = anchorFrame
 
@@ -27,7 +27,7 @@ end
 Cell:RegisterCallback("UpdateMenu", "PlayerFrame_UpdateMenu", UpdateMenu)
 
 local function UpdateLayout(_, which)
-    B:UpdateUnitButtonLayout(unit, which, playerButton, anchorFrame, menu)
+    B:UpdateUnitButtonLayout(unit, which, playerButton, anchorFrame)
 end
 Cell:RegisterCallback("UpdateLayout", "PlayerFrame_UpdateLayout", UpdateLayout)
 
