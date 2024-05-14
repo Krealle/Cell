@@ -3548,7 +3548,7 @@ function B:CreateBaseUnitFrame(unit, configTitle, onEnterLogic)
     return frame, anchorFrame, hoverFrame, config, menu
 end
 
-function B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+function B:UpdateUnitButtonPosition(unit, button, anchorFrame)
     local layout = Cell.vars.currentLayoutTable
     
     local anchor
@@ -3558,7 +3558,7 @@ function B:UpdateUnitFramePosition(unit, frame, anchorFrame)
         anchor = layout[unit]["anchor"]
     end
 
-    frame:ClearAllPoints()
+    button:ClearAllPoints()
     -- NOTE: detach from PreviewAnchor
     P:LoadPosition(anchorFrame, layout[unit]["position"])
     
@@ -3566,38 +3566,38 @@ function B:UpdateUnitFramePosition(unit, frame, anchorFrame)
         P:Size(anchorFrame, 20, 10)
         
         if anchor == "BOTTOMLEFT" then
-            P:Point(frame, "BOTTOMLEFT", anchorFrame, "TOPLEFT", 0, 4)
+            P:Point(button, "BOTTOMLEFT", anchorFrame, "TOPLEFT", 0, 4)
             B:SaveTooltipPosition(unit, "TOPLEFT", "BOTTOMLEFT", 0, -3)
         elseif anchor == "BOTTOMRIGHT" then
-            P:Point(frame, "BOTTOMRIGHT", anchorFrame, "TOPRIGHT", 0, 4)
+            P:Point(button, "BOTTOMRIGHT", anchorFrame, "TOPRIGHT", 0, 4)
             B:SaveTooltipPosition(unit, "TOPRIGHT", "BOTTOMRIGHT", 0, -3)
         elseif anchor == "TOPLEFT" then
-            P:Point(frame, "TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -4)
+            P:Point(button, "TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -4)
             B:SaveTooltipPosition(unit, "BOTTOMLEFT", "TOPLEFT", 0, 3)
         elseif anchor == "TOPRIGHT" then
-            P:Point(frame, "TOPRIGHT", anchorFrame, "BOTTOMRIGHT", 0, -4)
+            P:Point(button, "TOPRIGHT", anchorFrame, "BOTTOMRIGHT", 0, -4)
             B:SaveTooltipPosition(unit, "BOTTOMRIGHT", "TOPRIGHT", 0, 3)
         end
     else -- left_right
         P:Size(anchorFrame, 10, 20)
 
         if anchor == "BOTTOMLEFT" then
-            P:Point(frame, "BOTTOMLEFT", anchorFrame, "BOTTOMRIGHT", 4, 0)
+            P:Point(button, "BOTTOMLEFT", anchorFrame, "BOTTOMRIGHT", 4, 0)
             B:SaveTooltipPosition(unit, "BOTTOMRIGHT", "BOTTOMLEFT", -3, 0)
         elseif anchor == "BOTTOMRIGHT" then
-            P:Point(frame, "BOTTOMRIGHT", anchorFrame, "BOTTOMLEFT", -4, 0)
+            P:Point(button, "BOTTOMRIGHT", anchorFrame, "BOTTOMLEFT", -4, 0)
             B:SaveTooltipPosition(unit, "BOTTOMLEFT", "BOTTOMRIGHT", 3, 0)
         elseif anchor == "TOPLEFT" then
-            P:Point(frame, "TOPLEFT", anchorFrame, "TOPRIGHT", 4, 0)
+            P:Point(button, "TOPLEFT", anchorFrame, "TOPRIGHT", 4, 0)
             B:SaveTooltipPosition(unit, "TOPRIGHT", "TOPLEFT", -3, 0)
         elseif anchor == "TOPRIGHT" then
-            P:Point(frame, "TOPRIGHT", anchorFrame, "TOPLEFT", -4, 0)
+            P:Point(button, "TOPRIGHT", anchorFrame, "TOPLEFT", -4, 0)
             B:SaveTooltipPosition(unit, "TOPLEFT", "TOPRIGHT", 3, 0)
         end
     end
 end
 
-function B:UpdateUnitFrameLayout(unit, which, frame, anchorFrame, button, menu)
+function B:UpdateUnitButtonLayout(unit, which, button, anchorFrame, menu)
     layout = Cell.vars.currentLayoutTable
 
     -- Size
@@ -3669,7 +3669,7 @@ function B:UpdateUnitFrameLayout(unit, which, frame, anchorFrame, button, menu)
         
         button:SetPoint(point, anchorFrame, anchorPoint, 0, unitSpacingY)
         
-        B:UpdateUnitFramePosition(unit, button, anchorFrame)
+        B:UpdateUnitButtonPosition(unit, button, anchorFrame)
         
     end
 
@@ -3721,7 +3721,7 @@ function B:UpdateUnitButtonMenu(which, unit, button, anchorFrame, config)
     end
 
     if which == "position" then
-        B:UpdateUnitFramePosition(unit, button, anchorFrame)
+        B:UpdateUnitButtonPosition(unit, button, anchorFrame)
     end
 end
 
