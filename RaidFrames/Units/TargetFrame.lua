@@ -15,9 +15,8 @@ local targetButton = CreateFrame("Button", "CellTargetButton", targetFrame, "Cel
 targetButton:SetAttribute("unit", unit)
 targetButton:SetPoint("TOPLEFT")
 targetButton:HookScript("OnEvent", function(self,event) 
-    -- This is a lil hack to get around the OnUpdate throttle
     -- This frame should always be fully refreshed when target changes
-    if event == "PLAYER_TARGET_CHANGED" then targetButton:Hide() end
+    if event == "PLAYER_TARGET_CHANGED" then B.UpdateAll(targetButton) end
 end)
 Cell.unitButtons.target[unit] = targetButton
 
