@@ -15,9 +15,8 @@ local focusButton = CreateFrame("Button", "CellFocusButton", focusFrame, "CellUn
 focusButton:SetAttribute("unit", unit)
 focusButton:SetPoint("TOPLEFT")
 focusButton:HookScript("OnEvent", function(self,event) 
-    -- This is a lil hack to get around the OnUpdate throttle
     -- This frame should always be fully refreshed when focus changes
-    if event == "PLAYER_FOCUS_CHANGED" then focusButton:Hide() end
+    if event == "PLAYER_FOCUS_CHANGED" then B.UpdateAll(focusButton) end
 end)
 Cell.unitButtons.focus[unit] = focusButton
 
