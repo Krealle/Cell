@@ -41,14 +41,6 @@ end
 Cell:RegisterCallback("UpdatePixelPerfect", "TargetFrame_UpdatePixelPerfect", UpdatePixelPerfect)
 
 local function TargetFrame_UpdateVisibility(which)
-    if not which or which == unit then
-        if Cell.vars.currentLayoutTable[unit]["enabled"] then
-            RegisterUnitWatch(targetButton)
-            targetFrame:Show()
-        else
-            UnregisterUnitWatch(targetButton)
-            targetFrame:Hide()
-        end
-    end
+    B:UpdateUnitFrameVisibility(which, unit, targetButton, targetFrame)
 end
 Cell:RegisterCallback("UpdateVisibility", "TargetFrame_UpdateVisibility", TargetFrame_UpdateVisibility)

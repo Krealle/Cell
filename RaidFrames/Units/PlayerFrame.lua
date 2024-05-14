@@ -7,7 +7,6 @@ local P = Cell.pixelPerfectFuncs
 
 local unit = "player"
 
--- PlayerFrame
 local playerFrame, anchorFrame, hoverFrame, config = B:CreateBaseUnitFrame(unit, "Player Frame")
 Cell.frames.playerFrame = playerFrame
 Cell.frames.playerFrameAnchor = anchorFrame
@@ -38,14 +37,6 @@ end
 Cell:RegisterCallback("UpdatePixelPerfect", "PlayerFrame_UpdatePixelPerfect", UpdatePixelPerfect)
 
 local function PlayerFrame_UpdateVisibility(which)
-    if not which or which == unit then
-        if Cell.vars.currentLayoutTable[unit]["enabled"] then
-            RegisterAttributeDriver(playerButton, "state-visibility","show")
-            playerFrame:Show()
-        else
-            UnregisterAttributeDriver(playerButton, "state-visibility")
-            playerFrame:Hide()
-        end
-    end
+    B:UpdateUnitFrameVisibility(which, unit, playerButton, playerFrame)
 end
 Cell:RegisterCallback("UpdateVisibility", "PlayerFrame_UpdateVisibility", PlayerFrame_UpdateVisibility)
