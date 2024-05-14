@@ -3484,6 +3484,12 @@ B.UpdateHealthMax = UnitButton_UpdateHealthMax
 B.UpdateAuras = UnitButton_UpdateAuras
 B.UpdateName = UnitButton_UpdateName
 
+-------------------------------------------------
+-- unit button generics/helpers
+-- used for Player/Focus/Target frames
+-- TODO: maybe abstract to own file?
+-------------------------------------------------
+
 function B:SaveTooltipPosition(unit, tooltipPoint, tooltipRelativePoint, tooltipX, tooltipY)
     Cell.vars.currentLayoutTable[unit]["tooltipPosition"] = {tooltipPoint, tooltipRelativePoint, tooltipX, tooltipY}
 end
@@ -3702,6 +3708,18 @@ function B:UpdateUnitButtonMenu(which, unit, button, anchorFrame, config)
 
     if which == "position" then
         B:UpdateUnitButtonPosition(unit, button, anchorFrame)
+    end
+end
+
+function B:UpdateUnitFrameVisibility(which, unit, button, frame)
+    if not which or which == unit then
+        if Cell.vars.currentLayoutTable[unit]["enabled"] then
+            RegisterUnitWatch(button)
+            frame:Show()
+        else
+            UnregisterUnitWatch(button)
+            frame:Hide()
+        end
     end
 end
 
