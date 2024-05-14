@@ -25,7 +25,7 @@ Cell.unitButtons.target[unit] = targetButton
 -- callbacks
 -------------------------------------------------
 local function UpdateMenu(which)
-    B:UpdateUnitFrameMenu(which, unit, targetFrame, anchorFrame, config)
+    B:UpdateUnitButtonMenu(which, unit, targetButton, anchorFrame, config)
 end
 Cell:RegisterCallback("UpdateMenu", "TargetFrame_UpdateMenu", UpdateMenu)
 
