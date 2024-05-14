@@ -45,6 +45,7 @@ local function TargetFrame_UpdateVisibility(which)
     if not which or which == unit then
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
             RegisterUnitWatch(targetButton)
+            targetFrame:Show()
         else
             UnregisterUnitWatch(targetButton)
             targetFrame:Hide()
