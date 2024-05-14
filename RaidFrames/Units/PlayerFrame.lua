@@ -27,7 +27,7 @@ end
 Cell:RegisterCallback("UpdateMenu", "PlayerFrame_UpdateMenu", UpdateMenu)
 
 local function UpdateLayout(_, which)
-    B:UpdateUnitFrameLayout(unit, which, playerFrame, anchorFrame, playerButton, menu)
+    B:UpdateUnitButtonLayout(unit, which, playerButton, anchorFrame, menu)
 end
 Cell:RegisterCallback("UpdateLayout", "PlayerFrame_UpdateLayout", UpdateLayout)
 
