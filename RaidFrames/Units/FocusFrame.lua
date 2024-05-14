@@ -45,6 +45,7 @@ local function FocusFrame_UpdateVisibility(which)
     if not which or which == unit then
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
             RegisterUnitWatch(focusButton)
+            focusFrame:Show()
         else
             UnregisterUnitWatch(focusButton)
             focusFrame:Hide()

@@ -15,7 +15,6 @@ Cell.frames.playerFrameAnchor = anchorFrame
 local playerButton = CreateFrame("Button", "CellPlayerButton", playerFrame, "CellUnitButtonTemplate")
 playerButton:SetAttribute("unit", unit)
 playerButton:SetPoint("TOPLEFT")
-playerButton:Show()
 Cell.unitButtons.player[unit] = playerButton
 
 -------------------------------------------------
@@ -41,9 +40,10 @@ Cell:RegisterCallback("UpdatePixelPerfect", "PlayerFrame_UpdatePixelPerfect", Up
 local function PlayerFrame_UpdateVisibility(which)
     if not which or which == unit then
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
-            RegisterAttributeDriver(playerFrame, "state-visibility")
+            RegisterAttributeDriver(playerButton, "state-visibility","show")
+            playerFrame:Show()
         else
-            UnregisterAttributeDriver(playerFrame, "state-visibility")
+            UnregisterAttributeDriver(playerButton, "state-visibility")
             playerFrame:Hide()
         end
     end
