@@ -22,7 +22,7 @@ Cell.unitButtons.player[unit] = playerButton
 -- callbacks
 -------------------------------------------------
 local function UpdateMenu(which)
-    B:UpdateUnitFrameMenu(which, unit, playerFrame, anchorFrame, config)
+    B:UpdateUnitButtonMenu(which, unit, playerButton, anchorFrame, config)
 end
 Cell:RegisterCallback("UpdateMenu", "PlayerFrame_UpdateMenu", UpdateMenu)
 

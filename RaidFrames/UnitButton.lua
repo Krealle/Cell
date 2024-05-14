@@ -3499,7 +3499,7 @@ function B:UpdateUnitFrameLayout(unit, which, frame, anchorFrame, button, menu)
         
         button:SetPoint(point, anchorFrame, anchorPoint, 0, unitSpacingY)
         
-        B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+        B:UpdateUnitFramePosition(unit, button, anchorFrame)
         
     end
 
@@ -3533,7 +3533,7 @@ function B:UpdateUnitFrameLayout(unit, which, frame, anchorFrame, button, menu)
     end
 end
 
-function B:UpdateUnitFrameMenu(which, unit, frame, anchorFrame, config)
+function B:UpdateUnitButtonMenu(which, unit, button, anchorFrame, config)
     if not which or which == "lock" then
         if CellDB["general"]["locked"] then
             config:RegisterForDrag()
@@ -3551,7 +3551,7 @@ function B:UpdateUnitFrameMenu(which, unit, frame, anchorFrame, config)
     end
 
     if which == "position" then
-        B:UpdateUnitFramePosition(unit, frame, anchorFrame)
+        B:UpdateUnitFramePosition(unit, button, anchorFrame)
     end
 end
 
