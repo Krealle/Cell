@@ -1574,7 +1574,7 @@ local function UpdateTargetPreview()
 end
 
 -------------------------------------------------
--- target preview
+-- focus preview
 -------------------------------------------------
 local function UpdateFocusPreview()
   if not unitPreviews["focus"] then
