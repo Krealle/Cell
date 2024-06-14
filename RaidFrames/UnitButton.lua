@@ -4599,6 +4599,7 @@ function B:UpdateUnitFrameVisibility(which, unit, button, frame)
         if Cell.vars.currentLayoutTable[unit]["enabled"] then
             RegisterUnitWatch(button)
             frame:Show()
+            F:HideBlizzardUnitFrame(unit)
         else
             UnregisterUnitWatch(button)
             frame:Hide()
