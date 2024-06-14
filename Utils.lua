@@ -16,12 +16,11 @@ Cell.isVanilla = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
 -- Cell.isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC and LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING
 Cell.isWrath = WOW_PROJECT_ID == WOW_PROJECT_WRATH_CLASSIC
 Cell.isCata = WOW_PROJECT_ID == WOW_PROJECT_CATACLYSM_CLASSIC
-
+Cell.isTWW = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WAR_WITHIN
 -------------------------------------------------
 -- class
 -------------------------------------------------
-local localizedClass = {}
-FillLocalizedClassList(localizedClass)
+local localizedClass = LocalizedClassList()
 
 local sortedClasses = {}
 local classFileToID = {}
@@ -50,6 +49,32 @@ do
         end
     end
     sort(sortedClasses)
+end
+
+if Cell.isRetail then
+    ---@param spellid number
+    ---@return string, number
+    function F:GetSpellNameAndIcon(spellid)
+        if C_Spell and C_Spell.GetSpellInfo then
+            local info = C_Spell.GetSpellInfo(spellid)
+            if not info.icon then
+                info.icon = C_Spell.GetSpellTexture(spellid)
+            end
+
+            return info.name, info.icon
+        end
+
+        -- todo: remove once 11.0 prepatch hits
+        local name, _, icon = GetSpellInfo(spellid)
+        return name, icon
+    end
+else
+    ---@param spellid number
+    ---@return string, number
+    function F:GetSpellNameAndIcon(spellid)
+        local name, _, icon = GetSpellInfo(spellid)
+        return name, icon
+    end
 end
 
 function F:GetClassID(classFile)
@@ -615,7 +640,6 @@ function F:ConvertTable(t, value)
     return temp
 end
 
-local GetSpellInfo = GetSpellInfo
 function F:ConvertSpellTable(t, convertIdToName)
     if not convertIdToName then
         return F:ConvertTable(t)
@@ -623,7 +647,7 @@ function F:ConvertSpellTable(t, convertIdToName)
 
     local temp = {}
     for k, v in ipairs(t) do
-        local name = GetSpellInfo(v)
+        local name = F:GetSpellNameAndIcon(v)
         if name then
             temp[name] = k
         end
@@ -635,7 +659,7 @@ function F:ConvertSpellTable_WithClass(t)
     local temp = {}
     for class, ct in pairs(t) do
         for _, id in ipairs(ct) do
-            local name = GetSpellInfo(id)
+            local name = F:GetSpellNameAndIcon(id)
             if name then
                 temp[id] = true
             end
@@ -648,7 +672,7 @@ function F:ConvertSpellDurationTable(t, convertIdToName)
     local temp = {}
     for _, v in ipairs(t) do
         local id, duration = strsplit(":", v)
-        local name = GetSpellInfo(id)
+        local name = F:GetSpellNameAndIcon(id)
         if name then
             if convertIdToName then
                 temp[name] = tonumber(duration)
@@ -665,7 +689,7 @@ function F:ConvertSpellDurationTable_WithClass(t)
     for class, ct in pairs(t) do
         for k, v in ipairs(ct) do
             local id, duration = strsplit(":", v)
-            local name, _, icon = GetSpellInfo(id)
+            local name, icon = F:GetSpellNameAndIcon(id)
             if name then
                 temp[tonumber(id)] = {tonumber(duration), icon}
             end
@@ -698,7 +722,7 @@ function F:FilterInvalidSpells(t)
         else -- consumables
             spellId = t[i][1]
         end
-        if not GetSpellInfo(spellId) then
+        if not F:GetSpellNameAndIcon(spellId) then
             tremove(t, i)
         end
     end
@@ -1420,8 +1444,6 @@ local UnitInRange = UnitInRange
 local UnitCanAssist = UnitCanAssist
 local UnitCanAttack = UnitCanAttack
 local UnitCanCooperate = UnitCanCooperate
-local IsSpellInRange = IsSpellInRange
-local IsItemInRange = IsItemInRange
 local CheckInteractDistance = CheckInteractDistance
 local UnitIsDead = UnitIsDead
 local GetSpellTabInfo = GetSpellTabInfo
@@ -1495,51 +1517,77 @@ local harmItems = {
     ["WARRIOR"] = 28767,
 }
 
-local function GetNumSpells()
-    local _, _, offset, numSpells = GetSpellTabInfo(GetNumSpellTabs())
-    return offset + numSpells
-end
-
 local function FindSpellIndex(spellName)
     if not spellName or spellName == "" then
         return nil
     end
-    for i = 1, GetNumSpells() do
-        local spell = GetSpellBookItemName(i, BOOKTYPE_SPELL)
-        if spell == spellName then
-            return i
+
+    if C_SpellBook and C_SpellBook.FindSpellBookSlotForSpell then
+        return select(1, C_SpellBook.FindSpellBookSlotForSpell(spellName))
+    end
+
+    local tabs = C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines and C_SpellBook.GetNumSpellBookSkillLines() or GetNumSpellTabs()
+    local total = 0
+
+    if C_SpellBook and C_SpellBook.GetSpellBookSkillLineInfo then
+        local info = C_SpellBook.GetSpellBookSkillLineInfo(tabs)
+        total = info.itemIndexOffset+ info.numSpellBookItems
+    else
+        local _, _, offset, numSpells = GetSpellTabInfo(tabs)
+        total = offset + numSpells
+    end
+
+    if C_SpellBook and C_SpellBook.GetSpellBookItemName then
+        for i = 1, total do
+            local spell = C_SpellBook.GetSpellBookItemName(i, Enum.SpellBookSpellBank.Player)
+            if spell == spellName then
+                return i
+            end
+        end
+    else
+        for i = 1, total do
+            local spell = GetSpellBookItemName(i, BOOKTYPE_SPELL)
+            if spell == spellName then
+                return i
+            end
         end
     end
+
     return nil
 end
 
 -- do
 --     -- NOTE: convert ID to NAME then to INDEX
 --     for k, id in pairs(friendSpells) do
---         friendSpells[k] = FindSpellIndex(GetSpellInfo(id))
+--         friendSpells[k] = FindSpellIndex(F:GetSpellNameAndIcon(id))
 --     end
 --     for k, id in pairs(harmSpells) do
---         harmSpells[k] = FindSpellIndex(GetSpellInfo(id))
+--         harmSpells[k] = FindSpellIndex(F:GetSpellNameAndIcon(id))
 --     end
 -- end
 
-local function UnitInSpellRange(spellIndex, unit)
-    if not spellIndex then return end
-    return IsSpellInRange(spellIndex, BOOKTYPE_SPELL, unit) == 1
+local function UnitInSpellRange(spellName, unit)
+    if C_Spell and C_Spell.IsSpellInRange then
+        return C_Spell.IsSpellInRange(spellName, unit)
+    end
+    if not IsSpellInRange or not spellName then return end
+    return IsSpellInRange(spellName, unit)
 end
 
 local rc = CreateFrame("Frame")
 rc:RegisterEvent("SPELLS_CHANGED")
 
-if playerClass == "EVOKER" then
-    local spell_dead, spell_alive, spell_harm
-    rc:SetScript("OnEvent", function()
-        spell_dead = FindSpellIndex(GetSpellInfo(361227))
-        spell_alive = FindSpellIndex(GetSpellInfo(361469))
-        spell_harm = FindSpellIndex(GetSpellInfo(361469))
-    end)
+local spell_friend, spell_harm, spell_dead
+rc:SetScript("OnEvent", function()
+    spell_friend = F:GetSpellNameAndIcon(friendSpells[playerClass])
+    spell_harm = F:GetSpellNameAndIcon(harmSpells[playerClass])
+    spell_dead = spell_friend
+    if playerClass == "EVOKER" then
+        spell_dead = F:GetSpellNameAndIcon(361227)
+    end
+end)
 
-    -- NOTE: UnitInRange for evoker is around 50y
+if Cell.isRetail then
     function F:IsInRange(unit, check)
         if not UnitIsVisible(unit) then
             return false
@@ -1547,108 +1595,63 @@ if playerClass == "EVOKER" then
 
         if UnitIsUnit("player", unit) then
             return true
-        -- elseif not check and F:UnitInGroup(unit) then
-        --     -- NOTE: UnitInRange only works with group players/pets
-        --     local checked
-        --     inRange, checked = UnitInRange(unit)
-        --     if not checked then
-        --         return F:IsInRange(unit, true)
-        --     end
-        --     return inRange
+        elseif not check and F:UnitInGroup(unit) then
+            -- NOTE: UnitInRange only works with group players/pets --! but not available for PLAYER PET when SOLO
+            local inRange, checked = UnitInRange(unit)
+            if not checked then
+                return F:IsInRange(unit, true)
+            end
+            return inRange
         else
-            -- UnitCanCooperate works with cross-faction, UnitCanAssist does not
             if UnitCanAssist("player", unit) or UnitCanCooperate("player", unit) then
-                -- print("CanAssist", unit)
                 if UnitIsDead(unit) then
-                    return UnitInSpellRange(spell_dead, unit) -- 40y
+                    return UnitInSpellRange(spell_dead, unit) -- resurrection range, need separately for evoker
                 else
-                    return UnitInSpellRange(spell_alive, unit) -- 25/30y
+                    return UnitInSpellRange(spell_friend, unit) -- normal heal range
                 end
             elseif UnitCanAttack("player", unit) then
-                -- print("CanAttack", unit)
-                return UnitInSpellRange(spell_harm, unit)
+                if spell_harm then
+                    return UnitInSpellRange(spell_harm, unit)
+                end
             end
 
-            -- print("InRange", unit)
             return UnitInRange(unit)
         end
     end
 else
-    local spell_friend, spell_harm
-    rc:SetScript("OnEvent", function()
-        spell_friend = FindSpellIndex(GetSpellInfo(friendSpells[playerClass]))
-        spell_harm = FindSpellIndex(GetSpellInfo(harmSpells[playerClass]))
-    end)
-
-    if Cell.isRetail then
-        function F:IsInRange(unit, check)
-            if not UnitIsVisible(unit) then
-                return false
-            end
-
-            if UnitIsUnit("player", unit) then
-                return true
-            elseif not check and F:UnitInGroup(unit) then
-                -- NOTE: UnitInRange only works with group players/pets --! but not available for PLAYER PET when SOLO
-                local checked
-                inRange, checked = UnitInRange(unit)
-                if not checked then
-                    return F:IsInRange(unit, true)
-                end
-                return inRange
-            else
-                if UnitCanAssist("player", unit) or UnitCanCooperate("player", unit) then
-                    -- print("CanAssist", unit)
-                    if spell_friend then
-                        return UnitInSpellRange(spell_friend, unit)
-                    end
-                elseif UnitCanAttack("player", unit) then
-                    -- print("CanAttack", unit)
-                    if spell_harm then
-                        return UnitInSpellRange(spell_harm, unit)
-                    end
-                end
-
-                -- print("InRange", unit)
-                return UnitInRange(unit)
-            end
+    function F:IsInRange(unit, check)
+        if not UnitIsVisible(unit) then
+            return false
         end
-    else
-        function F:IsInRange(unit, check)
-            if not UnitIsVisible(unit) then
-                return false
+
+        if UnitIsUnit("player", unit) then
+            return true
+        elseif not check and F:UnitInGroup(unit) then
+            -- NOTE: UnitInRange only works with group players/pets --! but not available for PLAYER PET when SOLO
+            local inRange, checked = UnitInRange(unit)
+            if not checked then
+                return F:IsInRange(unit, true)
+            end
+            return inRange
+        else
+            if UnitCanAssist("player", unit) then
+                -- print("CanAssist", unit)
+                if spell_friend then
+                    return UnitInSpellRange(spell_friend, unit)
+                else
+                    return C_Item.IsItemInRange(friendItems[playerClass], unit)
+                end
+            elseif UnitCanAttack("player", unit) then
+                -- print("CanAttack", unit)
+                if spell_harm then
+                    return UnitInSpellRange(spell_harm, unit)
+                else
+                    return C_Item.IsItemInRange(harmItems[playerClass], unit)
+                end
             end
 
-            if UnitIsUnit("player", unit) then
-                return true
-            elseif not check and F:UnitInGroup(unit) then
-                -- NOTE: UnitInRange only works with group players/pets --! but not available for PLAYER PET when SOLO
-                local checked
-                inRange, checked = UnitInRange(unit)
-                if not checked then
-                    return F:IsInRange(unit, true)
-                end
-                return inRange
-            else
-                if UnitCanAssist("player", unit) then
-                    -- print("CanAssist", unit)
-                    if spell_friend then
-                        return UnitInSpellRange(spell_friend, unit)
-                    else
-                        return IsItemInRange(friendItems[playerClass], unit)
-                    end
-                elseif UnitCanAttack("player", unit) then
-                    -- print("CanAttack", unit)
-                    if spell_harm then
-                        return UnitInSpellRange(spell_harm, unit)
-                    else
-                        return IsItemInRange(harmItems[playerClass], unit)
-                    end
-                end
-
-                -- print("CheckInteractDistance", unit)
-                return CheckInteractDistance(unit, 4) -- 28 yards
-            end
+            -- print("CheckInteractDistance", unit)
+            return CheckInteractDistance(unit, 4) -- 28 yards
         end
     end
 end
@@ -1902,38 +1905,6 @@ function F:GetInstanceName()
 end
 
 -------------------------------------------------
--- spell description
--------------------------------------------------
--- https://wow.gamepedia.com/UIOBJECT_GameTooltip
--- local function EnumerateTooltipLines_helper(...)
---     for i = 1, select("#", ...) do
---        local region = select(i, ...)
---        if region and region:GetObjectType() == "FontString" then
---           local text = region:GetText() -- string or nil
---           print(region:GetName(), text)
---        end
---     end
--- end
-
--- https://wowpedia.fandom.com/wiki/Patch_10.0.2/API_changes
-local lines = {}
-function F:GetSpellInfo(spellId)
-    wipe(lines)
-
-    local name, _, icon = GetSpellInfo(spellId)
-    if not name then return end
-
-    local data = C_TooltipInfo.GetSpellByID(spellId)
-    for i, line in ipairs(data.lines) do
-        TooltipUtil.SurfaceArgs(line)
-        -- line.leftText
-        -- line.rightText
-    end
-
-    return name, icon, table.concat(lines, "\n")
-end
-
--------------------------------------------------
 -- auras
 -------------------------------------------------
 -- name, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId, canApplyAura, isBossDebuff, castByPlayer, nameplateShowAll, timeMod = UnitAura
@@ -2091,5 +2062,13 @@ function F:OverrideLGF(override)
     if WeakAuras then
         WA_GetUnitFrame = WeakAuras.GetUnitFrame
         WeakAuras.GetUnitFrame = Cell.GetUnitFrame
+    end
+end
+
+function F:GetMouseFoci()
+    if Cell.isTWW then
+        return GetMouseFoci()
+    else
+        return GetMouseFocus()
     end
 end

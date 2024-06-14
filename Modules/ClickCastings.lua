@@ -3,8 +3,6 @@ local L = Cell.L
 local F = Cell.funcs
 local P = Cell.pixelPerfectFuncs
 
-local GetSpellInfo = GetSpellInfo
-
 local clickCastingsTab = Cell:CreateFrame("CellOptionsFrame_ClickCastingsTab", Cell.frames.optionsFrame, nil, nil, true)
 Cell.frames.clickCastingsTab = clickCastingsTab
 clickCastingsTab:SetAllPoints(Cell.frames.optionsFrame)
@@ -56,7 +54,6 @@ local mouseKeyIDs = {
     -- ["ScrollUp"] = 6,
     -- ["ScrollDown"]= 14,
 }
-
 local function GetBindingDisplay(modifier, key)
     modifier = modifier:gsub("%-", "|cff777777+|r")
     modifier = modifier:gsub("alt", "Alt")
@@ -402,6 +399,8 @@ local function ClearClickCastings(b)
         b:SetAttribute(bindKey, nil)
         local attr = string.gsub(bindKey, "type", "spell")
         b:SetAttribute(attr, nil)
+        attr = string.gsub(bindKey, "type", "macro")
+        b:SetAttribute(attr, nil)
         attr = string.gsub(bindKey, "type", "macrotext")
         b:SetAttribute(attr, nil)
         -- if t[2] == "spell" then
@@ -446,8 +445,12 @@ local function ApplyClickCastings(b)
             b:SetAttribute(bindKey, t[2])
         end
 
-        if t[2] == "spell" then
-            local spellName = GetSpellInfo(t[3]) or ""
+        if Cell.isTWW and t[2] == "spell" then
+            local spellName = F:GetSpellNameAndIcon(t[3]) or ""
+            local attr = string.gsub(bindKey, "type", t[2])
+            b:SetAttribute(attr, spellName)
+        elseif t[2] == "spell" then
+            local spellName = F:GetSpellNameAndIcon(t[3]) or ""
 
             -- NOTE: spell 在无效/过远的目标上会处于“等待选中目标”的状态，即鼠标指针有一圈灰色材质。用 macrotext 可以解决这个问题
             -- NOTE: 但对于尸体状态（未释放）的目标，需要额外判断
@@ -495,7 +498,6 @@ local function ApplyClickCastings(b)
                 else
                     b:SetAttribute(attr, "/cast ["..unit..condition.."] "..spellName..sMaRt)
                 end
-                if not Cell.isRetail then UpdatePlaceholder(b, attr) end
             end
         elseif t[2] == "macro" then
             local attr = string.gsub(bindKey, "type", "macrotext")
@@ -589,7 +591,8 @@ local function CreateTargetingPane()
     targetingDropdown = Cell:CreateDropdown(targetingPane, 195)
     targetingDropdown:SetPoint("TOPLEFT", targetingPane, "TOPLEFT", 5, -27)
 
-    targetingDropdown:SetItems({
+    
+    local items = {
         {
             ["text"] = L["Disabled"],
             ["value"] = "disabled",
@@ -599,8 +602,11 @@ local function CreateTargetingPane()
                 alwaysTargeting = "disabled"
                 Cell:Fire("UpdateClickCastings", true)
             end,
-        },
-        {
+        }
+    }
+    
+    if not Cell.isTWW then
+        table.insert(items, {
             ["text"] = L["Left Spell"],
             ["value"] = "left",
             ["onClick"] = function()
@@ -609,8 +615,8 @@ local function CreateTargetingPane()
                 alwaysTargeting = "left"
                 Cell:Fire("UpdateClickCastings", true)
             end,
-        },
-        {
+        })
+        table.insert(items, {
             ["text"] = L["Any Spells"],
             ["value"] = "any",
             ["onClick"] = function()
@@ -619,8 +625,9 @@ local function CreateTargetingPane()
                 alwaysTargeting = "any"
                 Cell:Fire("UpdateClickCastings", true)
             end,
-        },
-    })
+        })
+    end
+    targetingDropdown:SetItems(items)
     Cell:SetTooltips(targetingDropdown, "ANCHOR_TOPLEFT", 0, 2, L["Always Targeting"], L["Only available for Spells"])
 end
 
@@ -636,32 +643,40 @@ local function CreateSmartResPane()
     smartResDropdown = Cell:CreateDropdown(smartResPane, 195)
     smartResDropdown:SetPoint("TOPLEFT", smartResPane, "TOPLEFT", 5, -27)
 
-    smartResDropdown:SetItems({
+    local items = {
         {
             ["text"] = L["Disabled"],
             ["value"] = "disabled",
             ["onClick"] = function()
                 Cell.vars.clickCastings["smartResurrection"] = "disabled"
                 Cell:Fire("UpdateClickCastings", true)
-            end
-        },
-        {
-            ["text"] = L["Normal"],
-            ["value"] = "normal",
-            ["onClick"] = function()
-                Cell.vars.clickCastings["smartResurrection"] = "normal"
-                Cell:Fire("UpdateClickCastings", true)
-            end
-        },
-        {
-            ["text"] = L["Normal + Combat Res"],
-            ["value"] = "normal+combat",
-            ["onClick"] = function()
-                Cell.vars.clickCastings["smartResurrection"] = "normal+combat"
-                Cell:Fire("UpdateClickCastings", true)
-            end
-        },
-    })
+            end,
+        }
+    }
+    if not Cell.isTWW then
+        table.insert(items,
+            {
+                ["text"] = L["Normal"],
+                ["value"] = "normal",
+                ["onClick"] = function()
+                    Cell.vars.clickCastings["smartResurrection"] = "normal"
+                    Cell:Fire("UpdateClickCastings", true)
+                end,
+            }
+        )
+
+        table.insert(items, {
+                ["text"] = L["Normal + Combat Res"],
+                ["value"] = "normal+combat",
+                ["onClick"] = function()
+                    Cell.vars.clickCastings["smartResurrection"] = "normal+combat"
+                    Cell:Fire("UpdateClickCastings", true)
+                end,
+            }
+        )
+            
+    end
+    smartResDropdown:SetItems(items)
     Cell:SetTooltips(smartResDropdown, "ANCHOR_TOPLEFT", 0, 2, L["Smart Resurrection"], L["Replace click-castings of Spell type with resurrection spells on dead units"])
 end
 
@@ -744,8 +759,10 @@ local function ShowTypesMenu(index, b)
                 CheckChanges()
                 b:HideSpellIcon()
             end,
-        },
-        {
+        }
+    }
+    if not Cell.isTWW then
+        table.insert(items, {
             ["text"] = L["Macro"],
             ["onClick"] = function()
                 b.typeGrid:SetText(L["Macro"])
@@ -766,31 +783,31 @@ local function ShowTypesMenu(index, b)
                 CheckChanges()
                 b:HideSpellIcon()
             end,
-        },
-        {
-            ["text"] = L["Spell"],
-            ["onClick"] = function()
-                b.typeGrid:SetText(L["Spell"])
-                if clickCastingsTab.popupEditBox then clickCastingsTab.popupEditBox:Hide() end
+        })
+    end
+    table.insert(items, {
+        ["text"] = L["Spell"],
+        ["onClick"] = function()
+            b.typeGrid:SetText(L["Spell"])
+            if clickCastingsTab.popupEditBox then clickCastingsTab.popupEditBox:Hide() end
 
-                changed[index] = changed[index] or {b}
-                -- check type
-                if b.bindType ~= "spell" then
-                    changed[index]["bindType"] = "spell"
-                    changed[index]["bindAction"] = ""
-                    b.actionGrid:SetText("")
-                    b:HideSpellIcon()
-                else
-                    changed[index]["bindType"] = nil
-                    changed[index]["bindAction"] = nil
-                    b.actionGrid:SetText(b.bindActionDisplay)
-                    b:ShowSpellIcon(b.bindAction)
-                end
-                CheckChanged(index, b)
-                CheckChanges()
-            end,
-        },
-    }
+            changed[index] = changed[index] or {b}
+            -- check type
+            if b.bindType ~= "spell" then
+                changed[index]["bindType"] = "spell"
+                changed[index]["bindAction"] = ""
+                b.actionGrid:SetText("")
+                b:HideSpellIcon()
+            else
+                changed[index]["bindType"] = nil
+                changed[index]["bindAction"] = nil
+                b.actionGrid:SetText(b.bindActionDisplay)
+                b:ShowSpellIcon(b.bindAction)
+            end
+            CheckChanged(index, b)
+            CheckChanges()
+        end,
+    })
 
     menu:SetItems(items)
     P:ClearPoints(menu)
@@ -1022,7 +1039,7 @@ local function ShowActionsMenu(index, b)
 
         if (Cell.isVanilla or Cell.isCata) and Cell.vars.playerClass == "WARLOCK" then
             tinsert(items, {
-                ["text"] = GetSpellInfo(20707),
+                ["text"] = F:GetSpellNameAndIcon(20707),
                 ["onClick"] = function()
                     changed[index] = changed[index] or {b}
                     local macrotext = "/stopcasting\n/target mouseover\n/use item:36895\n/targetlasttarget"
@@ -1053,7 +1070,7 @@ local function ShowActionsMenu(index, b)
                                 b.actionGrid:SetText("")
                                 b:HideSpellIcon()
                             else
-                                b.actionGrid:SetText(GetSpellInfo(text) or "|cFFFF3030"..L["Invalid"])
+                                b.actionGrid:SetText(F:GetSpellNameAndIcon(text) or "|cFFFF3030"..L["Invalid"])
                                 b:ShowSpellIcon(text)
                             end
                         else
@@ -1083,7 +1100,7 @@ local function ShowActionsMenu(index, b)
                                 return
                             end
 
-                            local name, _, icon = GetSpellInfo(spellId)
+                            local name, icon = F:GetSpellNameAndIcon(spellId)
                             if not name then
                                 CellSpellTooltip:Hide()
                                 return
@@ -1304,7 +1321,7 @@ CreateBindingListButton = function(modifier, bindKey, bindType, bindAction, i)
                 b.bindActionDisplay = "|cFFFF3030"..L["Invalid"]
                 b:ShowSpellIcon()
             else
-                b.bindActionDisplay = GetSpellInfo(bindAction) or "|cFFFF3030"..L["Invalid"]
+                b.bindActionDisplay = F:GetSpellNameAndIcon(bindAction) or "|cFFFF3030"..L["Invalid"]
                 b:ShowSpellIcon(bindAction)
             end
         else
