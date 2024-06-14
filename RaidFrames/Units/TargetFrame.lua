@@ -18,6 +18,7 @@ targetButton:HookScript("OnEvent", function(self,event)
     -- This frame should always be fully refreshed when target changes
     if event == "PLAYER_TARGET_CHANGED" then B.UpdateAll(targetButton) end
 end)
+targetButton._layout = "Target"
 Cell.unitButtons.target[unit] = targetButton
 
 -------------------------------------------------

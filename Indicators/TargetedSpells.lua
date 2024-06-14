@@ -249,6 +249,7 @@ eventFrame:SetScript("OnEvent", function(_, event, sourceUnit)
     if event == "ENCOUNTER_END" then
         Reset()
         F:IterateAllUnitButtons(HideCasts, true)
+        F:IterateUnitUnitButtons(HideCasts)
         return
     end
 
@@ -384,6 +385,7 @@ end
 local function EnterLeaveInstance()
     Reset()
     F:IterateAllUnitButtons(HideCasts, true)
+    F:IterateUnitUnitButtons(HideCasts)
 end
 
 function I.EnableTargetedSpells(enabled)
@@ -391,6 +393,10 @@ function I.EnableTargetedSpells(enabled)
         F:IterateAllUnitButtons(function(b)
             b.indicators.targetedSpells:Show()
         end, true)
+
+        F:IterateUnitUnitButtons(function(b)
+            b.indicators.targetedSpells:Show()
+        end)
 
         -- UNIT_SPELLCAST_DELAYED UNIT_SPELLCAST_FAILED UNIT_SPELLCAST_INTERRUPTED UNIT_SPELLCAST_START UNIT_SPELLCAST_STOP
         -- UNIT_SPELLCAST_CHANNEL_START UNIT_SPELLCAST_CHANNEL_STOP
@@ -425,6 +431,11 @@ function I.EnableTargetedSpells(enabled)
             HideCasts(b)
             b.indicators.targetedSpells:Hide()
         end, true)
+
+        F:IterateUnitUnitButtons(function(b)
+            HideCasts(b)
+            b.indicators.targetedSpells:Hide()
+        end)
     end
 end
 

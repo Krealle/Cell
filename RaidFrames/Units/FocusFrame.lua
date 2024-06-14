@@ -18,6 +18,7 @@ focusButton:HookScript("OnEvent", function(self,event)
     -- This frame should always be fully refreshed when focus changes
     if event == "PLAYER_FOCUS_CHANGED" then B.UpdateAll(focusButton) end
 end)
+focusButton._layout = "Focus"
 Cell.unitButtons.focus[unit] = focusButton
 
 -------------------------------------------------

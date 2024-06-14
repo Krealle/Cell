@@ -12,34 +12,67 @@ local customIndicators = {
     ["debuff"] = {},
 }
 
+local enabledUnitIndicators = {
+    ["Player"] = {},
+    ["Target"] = {},
+    ["Focus"] = {}
+}
+local customUnitIndicators = {
+    ["Player"] = {
+        ["buff"] = {},
+        ["debuff"] = {},
+    },
+    ["Target"] = {
+        ["buff"] = {},
+        ["debuff"] = {},
+    },
+    ["Focus"] = {
+        ["buff"] = {},
+        ["debuff"] = {},
+    }
+}
+
 Cell.snippetVars.enabledIndicators = enabledIndicators
 Cell.snippetVars.customIndicators = customIndicators
 
 --! init enabledIndicators & customIndicators
-local function UpdateTablesForIndicator(indicatorTable)
+local function UpdateTablesForIndicator(indicatorTable, layout)
     local indicatorName = indicatorTable["indicatorName"]
     local auraType = indicatorTable["auraType"]
 
     -- keep custom indicators in table
-    if indicatorTable["enabled"] then enabledIndicators[indicatorName] = true end
+    if indicatorTable["enabled"] then 
+        if layout then
+            enabledUnitIndicators[layout][indicatorName] = true
+        else
+            enabledIndicators[indicatorName] = true 
+        end    
+    end
+
+    local indicator
+    if layout then
+        indicator = customUnitIndicators[layout][auraType]
+    else
+        indicator = customIndicators[auraType]
+    end
 
     -- NOTE: icons is different from other custom indicators, more like the Debuffs indicator
     if indicatorTable["type"] == "icons" then
-        customIndicators[auraType][indicatorName] = {
+        indicator[indicatorName] = {
             ["auras"] = F:ConvertSpellTable(indicatorTable["auras"], indicatorTable["trackByName"]), -- auras to match
             ["isIcons"] = true,
             ["found"] = {},
             ["num"] = indicatorTable["num"],
         }
     elseif indicatorTable["type"] == "blocks" then
-        customIndicators[auraType][indicatorName] = {
+        indicator[indicatorName] = {
             ["auras"] = F:ConvertSpellTable(indicatorTable["auras"], indicatorTable["trackByName"]), -- auras to match
             ["isBlocks"] = true,
             ["found"] = {},
             ["num"] = indicatorTable["num"],
         }
     else
-        customIndicators[auraType][indicatorName] = {
+        indicator[indicatorName] = {
             ["auras"] = F:ConvertSpellTable(indicatorTable["auras"], indicatorTable["trackByName"]), -- auras to match
             ["top"] = {}, -- top aura details
             ["topOrder"] = {}, -- top aura order
@@ -47,9 +80,9 @@ local function UpdateTablesForIndicator(indicatorTable)
     end
 
     if auraType == "buff" then
-        customIndicators[auraType][indicatorName]["castBy"] = indicatorTable["castBy"]
-        customIndicators[auraType][indicatorName]["_auras"] = F:Copy(indicatorTable["auras"]) --* save ids
-        customIndicators[auraType][indicatorName]["trackByName"] = indicatorTable["trackByName"]
+        indicator[indicatorName]["castBy"] = indicatorTable["castBy"]
+        indicator[indicatorName]["_auras"] = F:Copy(indicatorTable["auras"]) --* save ids
+        indicator[indicatorName]["trackByName"] = indicatorTable["trackByName"]
     end
 end
 
@@ -82,7 +115,8 @@ function I.CreateIndicator(parent, indicatorTable, noTableUpdate)
     parent.indicators[indicatorName] = indicator
 
     if not noTableUpdate then
-        UpdateTablesForIndicator(indicatorTable)
+        local layout = parent._layout or nil
+        UpdateTablesForIndicator(indicatorTable, layout)
     end
 
     return indicator
@@ -94,8 +128,15 @@ function I.RemoveIndicator(parent, indicatorName, auraType)
     indicator:Hide()
     indicator:SetParent(nil)
     parent.indicators[indicatorName] = nil
-    enabledIndicators[indicatorName] = nil
-    customIndicators[auraType][indicatorName] = nil
+
+    local layout = parent._layout or nil
+    if layout then
+        enabledUnitIndicators[layout][indicatorName] = nil
+        customUnitIndicators[layout][auraType][indicatorName] = nil
+    else
+        enabledIndicators[indicatorName] = nil
+        customIndicators[auraType][indicatorName] = nil
+    end
 end
 
 -- used for switching to a new layout
@@ -116,17 +157,66 @@ function I.RemoveAllCustomIndicators(parent)
     end
 end
 
-function I.ResetCustomIndicatorTables()
+function I.ResetCustomIndicatorTables(isUnitReset)
     -- clear
-    wipe(enabledIndicators)
-    wipe(customIndicators["buff"])
-    wipe(customIndicators["debuff"])
+    if not isUnitReset then
+        wipe(enabledIndicators)
+        wipe(customIndicators["buff"])
+        wipe(customIndicators["debuff"])
 
-    -- update customs
-    for i = Cell.defaults.builtIns + 1, #Cell.vars.currentLayoutTable.indicators do
-        UpdateTablesForIndicator(Cell.vars.currentLayoutTable.indicators[i])
+        -- update customs
+        for i = Cell.defaults.builtIns + 1, #Cell.vars.currentLayoutTable.indicators do
+            UpdateTablesForIndicator(Cell.vars.currentLayoutTable.indicators[i])
+        end
+    else
+        for layout, layoutTable in pairs(customUnitIndicators) do
+            wipe(enabledUnitIndicators[layout])
+            wipe(layoutTable["buff"])
+            wipe(layoutTable["debuff"])
+
+            -- update customs
+            local layoutTable = CellDB["layouts"][layout]
+            for i = Cell.defaults.builtIns + 1, #layoutTable.indicators do
+                UpdateTablesForIndicator(layoutTable.indicators[i], layout)
+            end
+        end
+    end    
+end
+
+local function UpdateCustomUnitIndicators(layout, indicatorName, setting, value, value2)
+    if layout and layout ~= "Player" and layout ~= "Target" and layout ~= "Focus" then return end
+
+    if not indicatorName or not string.find(indicatorName, "^indicator") then return end
+
+    if not layout then return F:Debug("UpdateCustomUnitIndicators: no layout", indicatorName, setting, value, value2) end
+
+    if setting == "enabled" then
+        if value then
+            enabledUnitIndicators[layout][indicatorName] = true
+        else
+            enabledUnitIndicators[layout][indicatorName] = nil
+        end
+    elseif setting == "auras" then
+        customUnitIndicators[layout][value][indicatorName]["_auras"] = F:Copy(value2) --* save ids
+        customUnitIndicators[layout][value][indicatorName]["auras"] = F:ConvertSpellTable(value2, customUnitIndicators[layout][value][indicatorName]["trackByName"])
+    elseif setting == "checkbutton" then
+        if customUnitIndicators[layout]["buff"][indicatorName] then
+            customUnitIndicators[layout]["buff"][indicatorName][value] = value2
+            if value == "trackByName" then
+                customUnitIndicators[layout]["buff"][indicatorName]["auras"] = F:ConvertSpellTable(customUnitIndicators[layout]["buff"][indicatorName]["_auras"], value2)
+            end
+        elseif customUnitIndicators[layout]["debuff"][indicatorName] then
+            customUnitIndicators[layout]["debuff"][indicatorName][value] = value2
+        end
+    else -- num, castBy
+        if customUnitIndicators[layout]["buff"][indicatorName] then
+            customUnitIndicators[layout]["buff"][indicatorName][setting] = value
+        elseif customUnitIndicators[layout]["debuff"][indicatorName] then
+            customUnitIndicators[layout]["debuff"][indicatorName][setting] = value
+        end
     end
 end
+Cell:RegisterCallback("UpdateIndicators", "UpdateCustomUnitIndicators", UpdateCustomUnitIndicators)
 
 local function UpdateCustomIndicators(layout, indicatorName, setting, value, value2)
     if layout and layout ~= Cell.vars.currentLayout then return end
@@ -167,8 +257,18 @@ Cell:RegisterCallback("UpdateIndicators", "UpdateCustomIndicators", UpdateCustom
 function I.ResetCustomIndicators(unitButton, auraType)
     local unit = unitButton.states.displayedUnit
 
-    for indicatorName, indicatorTable in pairs(customIndicators[auraType]) do
-        if enabledIndicators[indicatorName] and unitButton.indicators[indicatorName] then
+    local layout = unitButton._layout or nil
+    local auraIndicators, enabled
+    if layout then 
+        auraIndicators = customUnitIndicators[layout][auraType]
+        enabled = enabledUnitIndicators[layout]
+    else
+        auraIndicators = customIndicators[auraType]
+        enabled = enabledIndicators
+    end
+
+    for indicatorName, indicatorTable in pairs(auraIndicators) do
+        if enabled[indicatorName] and unitButton.indicators[indicatorName] then
             unitButton.indicators[indicatorName]:Hide(true)
             if indicatorTable["isIcons"] or indicatorTable["isBlocks"] then
                 if not indicatorTable["found"][unit] then
@@ -225,8 +325,18 @@ function I.UpdateCustomIndicators(unitButton, auraInfo, refreshing)
         debuffType = I.CheckDebuffType(debuffType, spellId)
     end
 
-    for indicatorName, indicatorTable in pairs(customIndicators[auraType]) do
-        if indicatorName and enabledIndicators[indicatorName] and unitButton.indicators[indicatorName] then
+    local layout = unitButton._layout or nil
+    local auraIndicators, enabled
+    if layout then 
+        auraIndicators = customUnitIndicators[layout][auraType]
+        enabled = enabledUnitIndicators[layout]
+    else
+        auraIndicators = customIndicators[auraType]
+        enabled = enabledIndicators
+    end
+
+    for indicatorName, indicatorTable in pairs(auraIndicators) do
+        if indicatorName and enabled[indicatorName] and unitButton.indicators[indicatorName] then
             local spell  --* trackByName
             if indicatorTable["trackByName"] then
                 spell = spellName
@@ -258,8 +368,19 @@ end
 
 function I.ShowCustomIndicators(unitButton, auraType)
     local unit = unitButton.states.displayedUnit
-    for indicatorName, indicatorTable in pairs(customIndicators[auraType]) do
-        if indicatorName and enabledIndicators[indicatorName] then
+
+    local layout = unitButton._layout or nil
+    local auraIndicators, enabled
+    if layout then 
+        auraIndicators = customUnitIndicators[layout][auraType]
+        enabled = enabledUnitIndicators[layout]
+    else
+        auraIndicators = customIndicators[auraType]
+        enabled = enabledIndicators
+    end
+
+    for indicatorName, indicatorTable in pairs(auraIndicators) do
+        if indicatorName and enabled[indicatorName] then
             local indicator = unitButton.indicators[indicatorName]
             if indicatorTable["isIcons"] or indicatorTable["isBlocks"] then
                 local t = indicatorTable["found"][unit]

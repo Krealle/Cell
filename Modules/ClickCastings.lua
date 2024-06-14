@@ -541,6 +541,18 @@ local function UpdateClickCastings(noReload)
         -- load db and set attribute
         ApplyClickCastings(b)
     end, false, true)
+
+    F:IterateUnitUnitButtons(function(b)
+        -- clear if attribute already set
+        ClearClickCastings(b)
+
+        -- update bindingClicks
+        b:SetAttribute("snippet", snippet)
+        SetBindingClicks(b)
+
+        -- load db and set attribute
+        ApplyClickCastings(b)
+    end)
     previousClickCastings = F:Copy(clickCastingTable)
 end
 Cell:RegisterCallback("UpdateClickCastings", "UpdateClickCastings", UpdateClickCastings)

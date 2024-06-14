@@ -158,6 +158,10 @@ local function UpdateNicknames(which, value1, value2)
             F:IterateAllUnitButtons(function(b)
                 b.indicators.nameText:UpdateName()
             end, true)
+
+            F:IterateUnitUnitButtons(function(b)
+                b.indicators.nameText:UpdateName()
+            end)
         end
     end
 
@@ -245,6 +249,10 @@ f:SetScript("OnEvent", function()
             F:IterateAllUnitButtons(function(b)
                 b.indicators.nameText:UpdateName()
             end, true)
+
+            F:IterateUnitUnitButtons(function(b)
+                b.indicators.nameText:UpdateName()
+            end)
         end
 
         local timer

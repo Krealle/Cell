@@ -1596,6 +1596,37 @@ local function UpdateAppearance(which)
                 B:UpdateHighlightSize(b)
             end
         end)
+
+        F:IterateUnitUnitButtons(function(b)
+            -- texture
+            if not which or which == "texture" or which == "reset" then
+                B:SetTexture(b, tex)
+            end
+            -- color
+            if not which or which == "color" or which == "fullColor" or which == "deathColor" or which == "alpha" or which == "shields" or which == "reset" then
+                B:UpdateColor(b)
+            end
+            -- outOfRangeAlpha
+            if which == "outOfRangeAlpha" or which == "reset" then
+                b.states.wasInRange = nil
+            end
+            -- shields
+            if not which or which == "shields" or which == "reset" then
+                B:UpdateShields(b)
+            end
+            -- animation
+            if not which or which == "animation" or which == "reset" then
+                B:UpdateAnimation(b)
+            end
+            -- highlightColor
+            if not which or which == "highlightColor" or which == "reset" then
+                B:UpdateHighlightColor(b)
+            end
+            -- highlightColor
+            if not which or which == "highlightSize" or which == "reset" then
+                B:UpdateHighlightSize(b)
+            end
+        end)
     end
 
     -- icon options

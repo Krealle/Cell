@@ -14,6 +14,7 @@ Cell.frames.playerFrameAnchor = anchorFrame
 local playerButton = CreateFrame("Button", "CellPlayerButton", playerFrame, "CellUnitButtonTemplate")
 playerButton:SetAttribute("unit", unit)
 playerButton:SetPoint("TOPLEFT")
+playerButton._layout = "Player"
 Cell.unitButtons.player[unit] = playerButton
 
 -------------------------------------------------

@@ -859,15 +859,6 @@ function F:IterateAllUnitButtons(func, updateCurrentGroupOnly, updateQuickAssist
         func(b)
     end
 
-    -- player
-    func(Cell.unitButtons.player["player"])
-
-    -- Target
-    func(Cell.unitButtons.target["target"])
-
-    -- Focus
-    func(Cell.unitButtons.focus["focus"])
-
     if Cell.isRetail and updateQuickAssist then
         for i = 1, 40 do
             func(Cell.unitButtons.quickAssist[i])
@@ -884,6 +875,23 @@ function F:IterateSharedUnitButtons(func)
     -- spotlight
     for _, b in pairs(Cell.unitButtons.spotlight) do
         func(b)
+    end
+end
+
+function F:IterateUnitUnitButtons(func, layout)
+    -- player
+    if not layout or layout == "Player" then
+        func(Cell.unitButtons.player["player"])
+    end
+
+    -- Target
+    if not layout or layout == "Target" then
+        func(Cell.unitButtons.target["target"])
+    end
+
+    -- Focus
+    if not layout or layout == "Focus" then
+        func(Cell.unitButtons.focus["focus"])
     end
 end
 
